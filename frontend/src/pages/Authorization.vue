@@ -1,41 +1,32 @@
 <template>
   <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-    <div style="border: 2px solid black; padding: 30px; max-width: 400px; width: 100%;">
-      <h1 style="text-align: center;">Авторизация</h1>
+    <div style="border: 2px solid black; border-radius: 20px; padding: 50px; max-width: 600px; width: 100%; background-color: #f5f5f5;">
+      <h1 style="text-align: center; margin-bottom: 30px; font-size: 24px;">Авторизация</h1>
       
       <form @submit.prevent="handleLogin">
-        <div style="margin-bottom: 20px;">
-          <label>Логин</label>
+        <div style="margin-bottom: 25px;">
+          <label style="display: block; text-align: left; margin-bottom: 5px;">Логин</label>
           <input 
             type="text" 
             v-model="login"
-            style="width: 100%; margin-top: 5px;"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;"
           >
-          <div style="margin-top: 5px;">Value</div>
         </div>
         
-        <div style="margin-bottom: 20px;">
-          <label>Пароль</label>
+        <div style="margin-bottom: 25px;">
+          <label style="display: block; text-align: left; margin-bottom: 5px;">Пароль</label>
           <input 
             :type="showPassword ? 'text' : 'password'" 
             v-model="password"
-            style="width: 100%; margin-top: 5px;"
+            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;"
           >
           <div style="display: flex; justify-content: space-between; margin-top: 5px;">
-            <span>Value</span>
-            <button 
-              type="button"
-              @click="showPassword = !showPassword"
-              style="background: none; border: none; cursor: pointer;"
-            >
-              👁
-            </button>
           </div>
         </div>
         
         <button 
           type="submit"
-          style="background-color: black; color: white; width: 100%; padding: 10px; border: none; cursor: pointer;"
+          style="background-color: black; color: white; width: 100%; padding: 14px; border: none; border-radius: 15px; cursor: pointer; font-size: 18px;"
         >
           Войти
         </button>
