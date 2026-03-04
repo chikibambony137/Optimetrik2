@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from api.routes import users
+from api.routes import *
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.database import get_db
@@ -22,6 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(measurement_types.router)
+app.include_router(measurement_instruments.router)
 app.include_router(users.router)
 
 @app.get("/test")
