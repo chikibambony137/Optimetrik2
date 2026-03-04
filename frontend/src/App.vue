@@ -1,9 +1,9 @@
 <template>
-  <Authorization></Authorization>
+  <Registration></Registration>
 </template>
 
 <script setup>
-import Authorization from './pages/Authorization.vue';
+import Registration from './pages/Registration.vue';
 </script>
 
 <style scoped>
