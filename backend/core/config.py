@@ -3,7 +3,7 @@ from pydantic import ConfigDict
 
 class Settings(BaseSettings):
     # База данных
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost/verification_db"
+    DATABASE_URL: str = "postgresql://postgres:12345678@192.168.0.104:5432/postgres"
     
     # JWT
     SECRET_KEY: str = "dev-secret-key-for-development-only"
@@ -11,8 +11,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Настройки приложения
-    PROJECT_NAME: str = "Verification Service"
-    VERSION: str = "1.0.0"
+    PROJECT_NAME: str = "Optimetrik"
+    VERSION: str = "0.0.1"
+    DESCRIPTION: str = "API для сервиса поверки средств измерений"
     
     model_config = ConfigDict(
         env_file=".env",

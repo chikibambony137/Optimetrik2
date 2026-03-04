@@ -1,0 +1,17 @@
+from sqlalchemy import Boolean, String, Column, Integer
+from sqlalchemy.orm import relationship
+from core.database import Base
+
+class TestBench(Base):
+    """Тестовый стенд"""
+    __tablename__ = "Test_tool"
+    
+    id = Column("ID", Integer, primary_key=True, index=True)
+    serial_number = Column("Serial_Number", String, nullable=False, unique=True)
+    active = Column("Active", Boolean, nullable=False, default=True)
+    
+    # Связи
+    test_tool_verifications = relationship("TestToolVerification", back_populates="test_bench")
+    
+    def __repr__(self):
+        return f"<TestBench {self.serial_number}>"
