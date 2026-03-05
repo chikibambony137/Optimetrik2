@@ -1,9 +1,9 @@
 <template>
-  <Authorization></Authorization>
+  <MainPage />
 </template>
 
 <script setup>
-import Authorization from './pages/Authorization.vue';
+import MainPage from './pages/MainPage.vue'
 </script>
 
 <style scoped>
