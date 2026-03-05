@@ -1,9 +1,9 @@
 <template>
-  <Registration></Registration>
+  <MainPage />
 </template>
 
 <script setup>
-import Registration from './pages/Registration.vue';
+import MainPage from './pages/MainPage.vue'
 </script>
 
 <style scoped>

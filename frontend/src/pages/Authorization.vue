@@ -40,6 +40,14 @@
           </button>
         </div>
       </form>
+       <!-- Диалог успешного входа -->
+      <Dialog
+        v-model:show="showSuccessDialog"
+        title="Успешный вход"
+        message="Вы успешно авторизовались в системе!"
+        confirmText="ОК"
+        @confirm="handleSuccessConfirm"
+      />
     </div>
   </div>
 </template>
@@ -47,17 +55,21 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import Dialog from '../components/blocks/Dialog.vue'
+
 
 const router = useRouter()
 
 const login = ref('')
 const password = ref('')
 const showPassword = ref(false)
+const showSuccessDialog = ref(false)
 
 const handleLogin = () => {
   console.log('Login:', login.value)
   console.log('Password:', password.value)
   // Здесь будет логика входа
+  showSuccessDialog.value = true
 }
 
 const goToRegistration = () => {

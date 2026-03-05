@@ -13,16 +13,16 @@
         <div 
           v-for="item in filteredMenuItems" 
           :key="item.id"
-          @click="activeTab = item.id"
+          @click="navigateTo(item.route)"
           :style="{ 
             padding: '10px 15px', 
             margin: '4px 0',
             cursor: 'pointer',
-            backgroundColor: activeTab === item.id ? 'white' : 'transparent',
+            backgroundColor: isActiveRoute(item.route) ? 'white' : 'transparent',
             borderRadius: '8px',
-            fontWeight: activeTab === item.id ? 'bold' : 'normal',
+            fontWeight: isActiveRoute(item.route) ? 'bold' : 'normal',
             fontSize: '14px',
-            boxShadow: activeTab === item.id ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
+            boxShadow: isActiveRoute(item.route) ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
           }"
         >
           {{ item.name }}
@@ -50,44 +50,11 @@
     <div style="flex: 1; margin-left: 260px; min-height: 100vh; background-color: #f5f5f5;">
       <!-- Контент -->
       <div style="padding: 25px; background-color: #f5f5f5; min-height: 100vh;">
-        <div style="padding: 20px; background-color: white; border-radius: 15px;">
-          <h2 style="margin-top: 0; margin-bottom: 20px; color: black; font-size: 20px;">{{ currentTabName }}</h2>
+        <div style="padding: 20px; background-color: white; border-radius: 15px; width: 1000px;">
+          <h2 style="margin-top: 0; margin-bottom: 20px; color: black; font-size: 20px;">{{ currentPageTitle }}</h2>
           
-          <!-- Заглушки для контента в зависимости от вкладки -->
-          <div style="color: #666; font-size: 14px;">
-            <div v-if="activeTab === 1">
-              <h3 style="margin-bottom: 15px; font-size: 16px;">Журнал поверок</h3>
-              <div v-for="i in 3" :key="i" style="padding: 12px; border: 1px solid #e0e0e0; margin-bottom: 10px; border-radius: 6px; background-color: #fafafa;">
-                Поверка №{{ i }} - Средство измерения {{ i }}
-              </div>
-            </div>
-            <div v-else-if="activeTab === 2">
-              <h3 style="margin-bottom: 15px; font-size: 16px;">Эталонные средства</h3>
-              <div v-for="i in 3" :key="i" style="padding: 12px; border: 1px solid #e0e0e0; margin-bottom: 10px; border-radius: 6px; background-color: #fafafa;">
-                Эталонное средство {{ i }}
-              </div>
-            </div>
-            <div v-else-if="activeTab === 3">
-              <h3 style="margin-bottom: 15px; font-size: 16px;">Тестовый стенд</h3>
-              <div v-for="i in 3" :key="i" style="padding: 12px; border: 1px solid #e0e0e0; margin-bottom: 10px; border-radius: 6px; background-color: #fafafa;">
-                Тестовый стенд {{ i }}
-              </div>
-            </div>
-            <div v-else-if="activeTab === 4">
-              <h3 style="margin-bottom: 15px; font-size: 16px;">Профиль</h3>
-              <div style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 6px; background-color: #fafafa;">
-                <p><strong>ФИО:</strong> {{ userFullName }}</p>
-                <p><strong>Роль:</strong> {{ userRole }}</p>
-                <p><strong>Логин:</strong> user{{ userData.value.id }}</p>
-              </div>
-            </div>
-            <div v-else-if="activeTab === 5 && userData.value.role === 'Администратор'">
-              <h3 style="margin-bottom: 15px; font-size: 16px;">Пользователи</h3>
-              <div v-for="i in 3" :key="i" style="padding: 12px; border: 1px solid #e0e0e0; margin-bottom: 10px; border-radius: 6px; background-color: #fafafa;">
-                Пользователь {{ i }}
-              </div>
-            </div>
-          </div>
+          <!-- Роутер-вью для отображения компонентов вкладок -->
+          <router-view />
         </div>
       </div>
     </div>
@@ -96,6 +63,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
 
 // Данные пользователя (в реальном проекте получать из БД/стора)
 const userData = ref({
@@ -123,11 +94,11 @@ const userRole = computed(() => {
 
 // Все пункты меню
 const allMenuItems = ref([
-  { id: 1, name: 'Журнал поверок', roles: ['Администратор', 'Метролог'] },
-  { id: 2, name: 'Эталонные средства', roles: ['Администратор', 'Метролог'] },
-  { id: 3, name: 'Тестовый стенд', roles: ['Администратор', 'Метролог'] },
-  { id: 4, name: 'Профиль', roles: ['Администратор', 'Метролог'] },
-  { id: 5, name: 'Пользователи', roles: ['Администратор'] } // Только для админа
+  { id: 1, name: 'Журнал поверок', route: 'journal', roles: ['Администратор', 'Метролог'] },
+  { id: 2, name: 'Эталонные средства', route: 'reference', roles: ['Администратор', 'Метролог'] },
+  { id: 3, name: 'Тестовый стенд', route: 'test-bench', roles: ['Администратор', 'Метролог'] },
+  { id: 4, name: 'Профиль', route: 'profile', roles: ['Администратор', 'Метролог'] },
+  { id: 5, name: 'Пользователи', route: 'users', roles: ['Администратор'] } // Только для админа
 ])
 
 // Фильтруем пункты меню по роли пользователя
@@ -137,13 +108,20 @@ const filteredMenuItems = computed(() => {
   )
 })
 
-// Активная вкладка
-const activeTab = ref(1)
+// Проверяем активный роут
+const isActiveRoute = (routeName) => {
+  return route.name === routeName
+}
 
-// Название текущей вкладки
-const currentTabName = computed(() => {
-  const item = allMenuItems.value.find(item => item.id === activeTab.value)
-  return item ? item.name : ''
+// Навигация
+const navigateTo = (routeName) => {
+  router.push({ name: routeName })
+}
+
+// Название текущей страницы
+const currentPageTitle = computed(() => {
+  const currentRoute = allMenuItems.value.find(item => item.route === route.name)
+  return currentRoute ? currentRoute.name : 'Журнал поверок'
 })
 </script>
 
