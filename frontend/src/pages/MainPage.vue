@@ -96,7 +96,7 @@ const userRole = computed(() => {
 const allMenuItems = ref([
   { id: 1, name: 'Журнал поверок', route: 'journal', roles: ['Администратор', 'Метролог'] },
   { id: 2, name: 'Эталонные средства', route: 'reference', roles: ['Администратор', 'Метролог'] },
-  { id: 3, name: 'Тестовый стенд', route: 'test-bench', roles: ['Администратор', 'Метролог'] },
+  { id: 3, name: 'Тестовый стенд', route: 'test-tool', roles: ['Администратор', 'Метролог'] },
   { id: 4, name: 'Профиль', route: 'profile', roles: ['Администратор', 'Метролог'] },
   { id: 5, name: 'Пользователи', route: 'users', roles: ['Администратор'] } // Только для админа
 ])
