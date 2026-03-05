@@ -7,5 +7,5 @@ from api.routes import (
     verifications,
     results,
     verification_types,
-    # auth
+    auth
 )
