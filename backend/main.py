@@ -23,6 +23,8 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(auth.router)
+
 app.include_router(verifications.router)
 app.include_router(test_tools.router)
 app.include_router(reference_devices.router)

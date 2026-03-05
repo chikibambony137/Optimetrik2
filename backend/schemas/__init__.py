@@ -1,6 +1,6 @@
 # Пользователи
 from schemas.user import (
-    UserBase, UserCreate, UserUpdate, UserRead
+    UserBase, UserLogin, UserRegister, UserResponse
 )
 
 # Типы средств измерения
