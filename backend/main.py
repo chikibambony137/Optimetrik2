@@ -22,11 +22,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(measurement_types.router)
-app.include_router(measurement_instruments.router)
 app.include_router(users.router)
+app.include_router(verifications.router)
+app.include_router(test_tools.router)
+app.include_router(reference_devices.router)
+app.include_router(measurement_instruments.router)
 
-@app.get("/test")
+app.include_router(measurement_types.router)
+app.include_router(results.router)
+app.include_router(verification_types.router)
+
+
+@app.get("/")
 def health_check(db: Session = Depends(get_db)):
     """
     Проверка работоспособности API и подключения к БД

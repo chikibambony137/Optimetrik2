@@ -1,5 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from datetime import date
 from models.user import User
@@ -209,7 +210,7 @@ def get_instrument_verifications(
     
     # Используем прямой SQL для сложного запроса
     result = db.execute(
-        """
+        text("""
         SELECT 
             v."ID",
             v."Real_Date_Verification",
@@ -223,7 +224,7 @@ def get_instrument_verifications(
         LEFT JOIN "User" u ON v."ID_Metrologist" = u."ID"
         WHERE v."ID_Instrument" = :instrument_id
         ORDER BY v."Real_Date_Verification" DESC
-        """,
+        """),
         {"instrument_id": instrument_id}
     ).fetchall()
     

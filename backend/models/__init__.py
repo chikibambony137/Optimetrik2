@@ -2,7 +2,7 @@ from models.user import User
 from models.measurement_type import MeasurementType
 from models.measurement_instrument import MeasurementInstrument
 from models.reference_device import ReferenceDevice
-from models.test_bench import TestBench
+from models.test_tool import TestTool
 from models.verification import Verification
 from models.result_verification import ResultVerification
 from models.verification_type import VerificationType
