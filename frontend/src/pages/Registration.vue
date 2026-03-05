@@ -203,7 +203,7 @@ const handleRegister = async () => {
 
   try {
     // Отправка данных на бэкенд
-    const response = await fetch('http://localhost:8000/users/', {
+    const response = await fetch('http://localhost:8000/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
