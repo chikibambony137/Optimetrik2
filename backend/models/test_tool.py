@@ -2,7 +2,7 @@ from sqlalchemy import Boolean, String, Column, Integer
 from sqlalchemy.orm import relationship
 from core.database import Base
 
-class TestBench(Base):
+class TestTool(Base):
     """Тестовый стенд"""
     __tablename__ = "Test_tool"
     
@@ -11,7 +11,7 @@ class TestBench(Base):
     active = Column("Active", Boolean, nullable=False, default=True)
     
     # Связи
-    test_tool_verifications = relationship("TestToolVerification", back_populates="test_bench")
+    test_tool_verifications = relationship("TestToolVerification", back_populates="test_tool")
     
     def __repr__(self):
-        return f"<TestBench {self.serial_number}>"
+        return f"<TestTool {self.serial_number}>"

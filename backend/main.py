@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from api.routes import users
+from api.routes import *
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.database import get_db
@@ -23,8 +23,17 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(verifications.router)
+app.include_router(test_tools.router)
+app.include_router(reference_devices.router)
+app.include_router(measurement_instruments.router)
 
-@app.get("/test")
+app.include_router(measurement_types.router)
+app.include_router(results.router)
+app.include_router(verification_types.router)
+
+
+@app.get("/")
 def health_check(db: Session = Depends(get_db)):
     """
     Проверка работоспособности API и подключения к БД

@@ -12,4 +12,4 @@ class TestToolVerification(Base):
     
     # Связи
     verification = relationship("Verification", back_populates="test_tool_verifications")
-    test_bench = relationship("TestBench", back_populates="test_tool_verifications")
+    test_tool = relationship("TestTool", back_populates="test_tool_verifications")
