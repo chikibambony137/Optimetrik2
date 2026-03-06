@@ -7,7 +7,7 @@
       <div style="padding: 20px; border-bottom: 1px solid black;">
         <h2 style="margin: 0; font-size: 16px; color: black;">Система управления</h2>
       </div>
-      
+    
       <!-- Навигационные вкладки -->
       <div style="flex: 1; padding: 15px 10px; overflow-y: auto;">
         <div 
@@ -62,19 +62,46 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
 
-// Данные пользователя (в реальном проекте получать из БД/стора)
 const userData = ref({
-  id: 1,
-  surname: 'Иванов',
-  name: 'Иван',
-  patronymic: 'Иванович',
-  role: 'Администратор' // или 'Метролог' для проверки отображения
+  id: null,
+  login: '',
+  surname: '',
+  name: '',
+  patronymic: '',
+  admin_role: false
+})
+
+// Данные пользователя (в реальном проекте получать из БД/стора)
+const loadUserData = () => {
+  try {
+    // Пробуем получить данные из localStorage
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      userData.value = JSON.parse(storedUser)
+    } else {
+      // Если данных нет, пробуем получить через токен
+      refreshUserData()
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error)
+    errorMessage.value = 'Ошибка загрузки данных пользователя'
+    showErrorDialog.value = true
+  }
+}
+
+onMounted(() => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+  loadUserData()
 })
 
 // Вычисляем инициалы
@@ -89,7 +116,7 @@ const userFullName = computed(() => {
 
 // Вычисляем роль
 const userRole = computed(() => {
-  return userData.value.role
+  return userData.value.admin_role ? 'Администратор' : 'Метролог'
 })
 
 // Все пункты меню
@@ -104,7 +131,7 @@ const allMenuItems = ref([
 // Фильтруем пункты меню по роли пользователя
 const filteredMenuItems = computed(() => {
   return allMenuItems.value.filter(item => 
-    item.roles.includes(userData.value.role)
+    item.roles.includes(userData.value.admin_role ? 'Администратор' : 'Метролог')
   )
 })
 
