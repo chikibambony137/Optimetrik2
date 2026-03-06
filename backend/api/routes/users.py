@@ -88,7 +88,6 @@ async def create_user(
         admin_role=getattr(user_data, 'admin_role', False),
         hashed_password=get_password_hash(user_data.password),
         login=user_data.login,
-        is_active=True
     )
     
     db.add(db_user)

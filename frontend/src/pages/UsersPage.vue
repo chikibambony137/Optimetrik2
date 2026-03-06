@@ -29,7 +29,21 @@
         >
           <span style="font-size: 18px;">+</span> Добавить
         </button>
+
+        <!-- Кнопка обновления данных -->
+        <button 
+          @click="loadUsers"
+          :disabled="loading"
+          style="background-color: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
+        >
+          <span>🔄</span> {{ loading ? 'Загрузка...' : 'Обновить' }}
+        </button>
       </div>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div v-if="loading" style="text-align: center; padding: 40px; color: #666;">
+      Загрузка данных...
     </div>
 
     <!-- Панель фильтров -->
@@ -65,10 +79,11 @@
     </div>
 
     <!-- Таблица пользователей -->
-    <div style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+    <div v-if="!loading" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <thead>
           <tr style="background-color: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
+            <th style="padding: 12px 15px; text-align: left;">ID</th>
             <th style="padding: 12px 15px; text-align: left;">Логин</th>
             <th style="padding: 12px 15px; text-align: left;">Фамилия</th>
             <th style="padding: 12px 15px; text-align: left;">Имя</th>
@@ -79,6 +94,7 @@
         </thead>
         <tbody>
           <tr v-for="item in filteredData" :key="item.id" style="border-bottom: 1px solid #e0e0e0;">
+            <td style="padding: 12px 15px;">{{ item.id }}</td>
             <td style="padding: 12px 15px;">{{ item.login }}</td>
             <td style="padding: 12px 15px;">{{ item.surname }}</td>
             <td style="padding: 12px 15px;">{{ item.name }}</td>
@@ -89,10 +105,10 @@
                 borderRadius: '4px', 
                 fontSize: '12px',
                 fontWeight: '500',
-                backgroundColor: item.role === 'Администратор' ? '#e3f2fd' : '#f5f5f5',
-                color: item.role === 'Администратор' ? '#1976d2' : '#666'
+                backgroundColor: item.admin_role ? '#e3f2fd' : '#f5f5f5',
+                color: item.admin_role ? '#1976d2' : '#666'
               }">
-                {{ item.role }}
+                {{ item.admin_role ? 'Администратор' : 'Метролог' }}
               </span>
             </td>
             
@@ -119,7 +135,7 @@
             </td>
           </tr>
           <tr v-if="filteredData.length === 0">
-            <td colspan="6" style="padding: 40px; text-align: center; color: #999;">
+            <td colspan="7" style="padding: 40px; text-align: center; color: #999;">
               Нет данных, соответствующих критериям поиска
             </td>
           </tr>
@@ -131,11 +147,6 @@
     <div v-if="showModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" @click.self="closeModal">
       <div style="background-color: white; border-radius: 12px; padding: 25px; width: 500px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
         <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 18px;">{{ modalTitle }}</h3>
-        
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Логин</label>
-          <input v-model="modalForm.login" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Введите логин">
-        </div>
 
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Фамилия</label>
@@ -153,26 +164,42 @@
         </div>
 
         <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Логин</label>
+          <input v-model="modalForm.login" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Введите логин">
+        </div>
+
+        <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Пароль</label>
           <input 
             v-model="modalForm.password" 
-            type="password" 
+            :type="showPassword ? 'text' : 'password'"
             style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" 
             :placeholder="editingId ? 'Оставьте пустым, чтобы не менять' : 'Введите пароль'"
           >
+          <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
+            <button 
+              type="button"
+              @click="showPassword = !showPassword"
+              style="background: none; border: none; color: #666; cursor: pointer; font-size: 12px;"
+            >
+              {{ showPassword ? 'Скрыть' : 'Показать' }}
+            </button>
+          </div>
         </div>
 
         <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Роль</label>
-          <select v-model="modalForm.role" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
-            <option value="Метролог">Метролог</option>
-            <option value="Администратор">Администратор</option>
+          <select v-model="modalForm.admin_role" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+            <option :value="false">Метролог</option>
+            <option :value="true">Администратор</option>
           </select>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <button @click="closeModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
-          <button @click="saveItem" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Сохранить</button>
+          <button @click="saveItem" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            {{ saving ? 'Сохранение...' : 'Сохранить' }}
+          </button>
         </div>
       </div>
     </div>
@@ -185,15 +212,41 @@
       confirmText="Удалить"
       @confirm="deleteItem"
     />
+
+    <!-- Диалог ошибки -->
+    <Dialog
+      v-model:show="showErrorDialog"
+      title="Ошибка"
+      :message="errorMessage"
+      confirmText="Понятно"
+      @confirm="showErrorDialog = false"
+    />
+
+    <!-- Диалог успеха -->
+    <Dialog
+      v-model:show="showSuccessDialog"
+      title="Успешно"
+      :message="successMessage"
+      confirmText="ОК"
+      @confirm="showSuccessDialog = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Dialog from '../components/blocks/Dialog.vue'
 
-// ID текущего пользователя (чтобы нельзя было удалить самого себя)
-const currentUserId = ref(1)
+const router = useRouter()
+const API_BASE_URL = 'http://localhost:8000'
+
+// ID текущего пользователя (получаем из localStorage)
+const currentUserId = ref(null)
+
+// Состояние загрузки
+const loading = ref(false)
+const saving = ref(false)
 
 // Состояние для поиска и фильтров
 const searchQuery = ref('')
@@ -202,69 +255,87 @@ const filters = ref({
   role: 'all'
 })
 
+// Диалоги
+const showErrorDialog = ref(false)
+const showSuccessDialog = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+
+// Показ пароля в модальном окне
+const showPassword = ref(false)
+
 // Данные пользователей
-const tableData = ref([
-  { 
-    id: 1, 
-    login: 'admin', 
-    surname: 'Иванов', 
-    name: 'Иван', 
-    patronymic: 'Иванович', 
-    role: 'Администратор',
-    password: 'hashed_password_1'
-  },
-  { 
-    id: 2, 
-    login: 'petrov_p', 
-    surname: 'Петров', 
-    name: 'Петр', 
-    patronymic: 'Петрович', 
-    role: 'Метролог',
-    password: 'hashed_password_2'
-  },
-  { 
-    id: 3, 
-    login: 'sidorova_a', 
-    surname: 'Сидорова', 
-    name: 'Анна', 
-    patronymic: 'Алексеевна', 
-    role: 'Метролог',
-    password: 'hashed_password_3'
-  },
-  { 
-    id: 4, 
-    login: 'smirnov_d', 
-    surname: 'Смирнов', 
-    name: 'Дмитрий', 
-    patronymic: 'Николаевич', 
-    role: 'Администратор',
-    password: 'hashed_password_4'
-  },
-  { 
-    id: 5, 
-    login: 'kuznetsova_e', 
-    surname: 'Кузнецова', 
-    name: 'Елена', 
-    patronymic: 'Сергеевна', 
-    role: 'Метролог',
-    password: 'hashed_password_5'
+const tableData = ref([])
+
+// Загрузка списка пользователей с бэкенда
+const loadUsers = async () => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
   }
-])
+
+  loading.value = true
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user')
+        router.push('/login')
+        return
+      }
+      throw new Error('Ошибка загрузки пользователей')
+    }
+
+    const data = await response.json()
+    tableData.value = data
+    console.log('Загружены пользователи:', data)
+  } catch (error) {
+    console.error('Error loading users:', error)
+    errorMessage.value = error.message || 'Ошибка загрузки пользователей'
+    showErrorDialog.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+// Получение ID текущего пользователя
+const loadCurrentUserId = () => {
+  try {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      const user = JSON.parse(storedUser)
+      currentUserId.value = user.id
+    }
+  } catch (error) {
+    console.error('Error loading current user:', error)
+  }
+}
 
 // Фильтрация данных
 const filteredData = computed(() => {
   return tableData.value.filter(item => {
     // Поиск по тексту
     const query = searchQuery.value.toLowerCase()
+    const role = item.admin_role ? 'Администратор' : 'Метролог'
+    
     const matchesSearch = query === '' || 
-      item.login.toLowerCase().includes(query) ||
-      item.surname.toLowerCase().includes(query) || 
-      item.name.toLowerCase().includes(query) ||
+      item.login?.toLowerCase().includes(query) ||
+      item.surname?.toLowerCase().includes(query) || 
+      item.name?.toLowerCase().includes(query) ||
       (item.patronymic && item.patronymic.toLowerCase().includes(query)) ||
-      item.role.toLowerCase().includes(query)
+      role.toLowerCase().includes(query)
     
     // Фильтр по роли
-    const matchesRole = filters.value.role === 'all' || item.role === filters.value.role
+    const matchesRole = filters.value.role === 'all' || 
+      (filters.value.role === 'Администратор' && item.admin_role) ||
+      (filters.value.role === 'Метролог' && !item.admin_role)
     
     return matchesSearch && matchesRole
   })
@@ -291,7 +362,7 @@ const modalForm = ref({
   surname: '',
   name: '',
   patronymic: '',
-  role: 'Метролог',
+  admin_role: false,
   password: ''
 })
 
@@ -299,13 +370,14 @@ const openAddModal = () => {
   modalTitle.value = 'Добавить пользователя'
   editingId.value = null
   modalForm.value = {
-    login: '',
     surname: '',
     name: '',
     patronymic: '',
-    role: 'Метролог',
-    password: ''
+    login: '',
+    password: '',
+    admin_role: false
   }
+  showPassword.value = false
   showModal.value = true
 }
 
@@ -317,59 +389,105 @@ const openEditModal = (item) => {
     surname: item.surname,
     name: item.name,
     patronymic: item.patronymic || '',
-    role: item.role,
+    admin_role: item.admin_role,
     password: '' // Пароль не показываем при редактировании
   }
+  showPassword.value = false
   showModal.value = true
 }
 
 const closeModal = () => {
   showModal.value = false
+  showPassword.value = false
 }
 
-const saveItem = () => {
+const saveItem = async () => {
   // Валидация
-  if (!modalForm.value.login || !modalForm.value.surname || !modalForm.value.name || !modalForm.value.role) {
-    alert('Заполните все обязательные поля')
+  if (!modalForm.value.login || !modalForm.value.surname || !modalForm.value.name) {
+    errorMessage.value = 'Заполните все обязательные поля'
+    showErrorDialog.value = true
     return
   }
 
   if (!editingId.value && !modalForm.value.password) {
-    alert('Введите пароль для нового пользователя')
+    errorMessage.value = 'Введите пароль для нового пользователя'
+    showErrorDialog.value = true
     return
   }
 
-  if (editingId.value) {
-    // Редактирование
-    const index = tableData.value.findIndex(item => item.id === editingId.value)
-    if (index !== -1) {
-      const updatedUser = {
-        id: editingId.value,
-        login: modalForm.value.login,
-        surname: modalForm.value.surname,
-        name: modalForm.value.name,
-        patronymic: modalForm.value.patronymic || null,
-        role: modalForm.value.role,
-        password: modalForm.value.password || tableData.value[index].password // Если пароль не меняли, оставляем старый
-      }
-      tableData.value[index] = updatedUser
-    }
-  } else {
-    // Добавление
-    const newId = Math.max(...tableData.value.map(item => item.id)) + 1
-    tableData.value.push({
-      id: newId,
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  saving.value = true
+  try {
+    // Подготавливаем данные для отправки - исключаем пустые поля
+    const dataToSend = {
       login: modalForm.value.login,
       surname: modalForm.value.surname,
       name: modalForm.value.name,
       patronymic: modalForm.value.patronymic || null,
-      role: modalForm.value.role,
-      password: `hashed_${modalForm.value.password}` // В реальности здесь должно быть хеширование
-    })
-  }
-  closeModal()
-}
+      admin_role: modalForm.value.admin_role
+    }
+    
+    // Добавляем пароль только если он не пустой
+    if (modalForm.value.password && modalForm.value.password.trim() !== '') {
+      dataToSend.password = modalForm.value.password
+    }
+    
+    console.log('Отправляемые данные:', dataToSend) // Для отладки
 
+    if (editingId.value) {
+      // Редактирование
+      const response = await fetch(`${API_BASE_URL}/users/${editingId.value}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Ошибка ответа:', error)
+        throw new Error(error.detail || 'Ошибка при обновлении пользователя')
+      }
+
+      successMessage.value = 'Пользователь успешно обновлен'
+    } else {
+      // Добавление
+      const response = await fetch(`${API_BASE_URL}/users/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Ошибка при создании пользователя')
+      }
+
+      successMessage.value = 'Пользователь успешно создан'
+    }
+    
+    // Обновляем список пользователей
+    await loadUsers()
+    showSuccessDialog.value = true
+    closeModal()
+  } catch (error) {
+    console.error('Error saving user:', error)
+    errorMessage.value = error.message || 'Ошибка при сохранении пользователя'
+    showErrorDialog.value = true
+  } finally {
+    saving.value = false
+  }
+}
 // Диалог удаления
 const showDeleteDialog = ref(false)
 const itemToDelete = ref(null)
@@ -380,13 +498,55 @@ const confirmDelete = (item) => {
 }
 
 const deleteMessage = computed(() => {
-  return `Вы уверены, что хотите удалить пользователя "${itemToDelete.value?.login}" (${itemToDelete.value?.surname} ${itemToDelete.value?.name})?`
+  if (!itemToDelete.value) return ''
+  const role = itemToDelete.value.admin_role ? 'Администратор' : 'Метролог'
+  return `Вы уверены, что хотите удалить пользователя "${itemToDelete.value.login}" (${itemToDelete.value.surname} ${itemToDelete.value.name}, ${role})?`
 })
 
-const deleteItem = () => {
-  if (itemToDelete.value) {
-    tableData.value = tableData.value.filter(item => item.id !== itemToDelete.value.id)
+const deleteItem = async () => {
+  if (!itemToDelete.value) return
+
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/${itemToDelete.value.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Ошибка при удалении пользователя')
+    }
+
+    // Обновляем список пользователей
+    await loadUsers()
+    successMessage.value = 'Пользователь успешно удален'
+    showSuccessDialog.value = true
+  } catch (error) {
+    console.error('Error deleting user:', error)
+    errorMessage.value = error.message || 'Ошибка при удалении пользователя'
+    showErrorDialog.value = true
+  } finally {
+    showDeleteDialog.value = false
     itemToDelete.value = null
   }
 }
+
+// Инициализация при загрузке компонента
+onMounted(() => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+  loadCurrentUserId()
+  loadUsers()
+})
 </script>
