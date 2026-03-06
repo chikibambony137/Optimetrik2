@@ -1,44 +1,58 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from sqlalchemy import select
 
-from api.dependencies import get_db  # добавлен app.
-from models.user import User         # добавлен app.
-from schemas.user import (           # добавлен app.
-    UserLogin, 
-    UserRegister, 
-    UserBase, 
-    UserResponse,
-    UserCreate,  # добавил недостающие схемы
-    UserUpdate,
-    UserRead
+from api.dependencies import get_db, get_current_user, get_current_admin_user
+from models.user import User
+from schemas.user import (
+    UserRead,
+    UserCreate,
+    UserUpdate
 )
-from core.security import get_password_hash  # добавлен импорт в начало
+from core.security import get_password_hash, verify_password
 
 router = APIRouter(prefix="/users", tags=["Пользователи"])
 
 
-@router.get("/", response_model=List[UserRead])
-def get_users(
-    db: Session = Depends(get_db),
-    skip: int = 0,
-    limit: int = 100
+@router.get("/me", response_model=UserRead)
+async def get_current_user_info(
+    request: Request,
+    current_user: User = Depends(get_current_user)
 ):
     """
-    Получить список всех пользователей
+    Получить информацию о текущем авторизованном пользователе
+    """
+    # Логируем для отладки
+    auth_header = request.headers.get("authorization")
+    print(f"=== /users/me called ===")
+    print(f"Auth header: {auth_header}")
+    print(f"Current user: {current_user.login if current_user else 'None'}")
+    
+    return current_user
+
+
+@router.get("/", response_model=List[UserRead])
+async def get_users(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 100,
+    current_user: User = Depends(get_current_admin_user)
+):
+    """
+    Получить список всех пользователей (только для администраторов)
     """
     users = db.query(User).offset(skip).limit(limit).all()
     return users
 
 
 @router.get("/{user_id}", response_model=UserRead)
-def get_user(
+async def get_user(
     user_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
-    Получить пользователя по ID
+    Получить пользователя по ID (только для администраторов)
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -50,12 +64,13 @@ def get_user(
 
 
 @router.post("/", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def create_user(
+async def create_user(
     user_data: UserCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
-    Создать нового пользователя
+    Создать нового пользователя (только для администраторов)
     """
     # Проверка уникальности логина
     existing_user = db.query(User).filter(User.login == user_data.login).first()
@@ -65,15 +80,6 @@ def create_user(
             detail="Пользователь с таким логином уже существует"
         )
     
-    # Проверка уникальности email, если он есть
-    if hasattr(user_data, 'email') and user_data.email:
-        existing_email = db.query(User).filter(User.email == user_data.email).first()
-        if existing_email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Пользователь с таким email уже существует"
-            )
-    
     # Создание пользователя
     db_user = User(
         surname=user_data.surname,
@@ -82,7 +88,6 @@ def create_user(
         admin_role=getattr(user_data, 'admin_role', False),
         hashed_password=get_password_hash(user_data.password),
         login=user_data.login,
-        email=getattr(user_data, 'email', None),
         is_active=True
     )
     
@@ -94,13 +99,14 @@ def create_user(
 
 
 @router.put("/{user_id}", response_model=UserRead)
-def update_user(
+async def update_user(
     user_id: int,
     user_data: UserUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
-    Обновить данные пользователя
+    Обновить данные пользователя (только для администраторов)
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -109,22 +115,13 @@ def update_user(
             detail="Пользователь не найден"
         )
     
-    # Проверка логина на уникальность (если меняется)
+    # Проверка логина на уникальность
     if user_data.login and user_data.login != user.login:
         existing = db.query(User).filter(User.login == user_data.login).first()
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Пользователь с таким логином уже существует"
-            )
-    
-    # Проверка email на уникальность (если меняется)
-    if hasattr(user_data, 'email') and user_data.email and user_data.email != user.email:
-        existing = db.query(User).filter(User.email == user_data.email).first()
-        if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Пользователь с таким email уже существует"
             )
     
     # Обновление полей
@@ -144,12 +141,13 @@ def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(
+async def delete_user(
     user_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin_user)
 ):
     """
-    Удалить пользователя
+    Удалить пользователя (только для администраторов)
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -158,11 +156,11 @@ def delete_user(
             detail="Пользователь не найден"
         )
     
-    # Проверка на связанные поверки
-    if user.verifications:
+    # Нельзя удалить самого себя
+    if user.id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя удалить пользователя, у которого есть проведенные поверки"
+            detail="Нельзя удалить свою учетную запись"
         )
     
     db.delete(user)
@@ -171,46 +169,32 @@ def delete_user(
     return None
 
 
-# # Добавим эндпоинт для регистрации (если нужен отдельно от create_user)
-# @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-# def register_user(
-#     user_data: UserRegister,
-#     db: Session = Depends(get_db)
-# ):
-#     """
-#     Регистрация нового пользователя (публичный эндпоинт)
-#     """
-#     # Проверка уникальности логина
-#     existing_user = db.query(User).filter(User.login == user_data.login).first()
-#     if existing_user:
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Пользователь с таким логином уже существует"
-#         )
+@router.post("/change-password")
+async def change_password(
+    password_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Смена пароля пользователя
+    """
+    # Проверяем текущий пароль
+    if not verify_password(password_data['current_password'], current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный текущий пароль"
+        )
     
-#     # Проверка уникальности email
-#     if user_data.email:
-#         existing_email = db.query(User).filter(User.email == user_data.email).first()
-#         if existing_email:
-#             raise HTTPException(
-#                 status_code=status.HTTP_400_BAD_REQUEST,
-#                 detail="Пользователь с таким email уже существует"
-#             )
+    # Проверяем сложность нового пароля
+    new_password = password_data['new_password']
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пароль должен содержать минимум 6 символов"
+        )
     
-#     # Создание пользователя (обычный пользователь, не админ)
-#     db_user = User(
-#         surname=user_data.surname,
-#         name=user_data.name,
-#         patronymic=user_data.patronymic,
-#         login=user_data.login,
-#         email=user_data.email,
-#         hashed_password=get_password_hash(user_data.password),
-#         admin_role=False,  # обычный пользователь
-#         is_active=True
-#     )
+    # Хешируем и сохраняем новый пароль
+    current_user.hashed_password = get_password_hash(new_password)
+    db.commit()
     
-#     db.add(db_user)
-#     db.commit()
-#     db.refresh(db_user)
-    
-#     return db_user
+    return {"message": "Пароль успешно изменен"}

@@ -1,6 +1,5 @@
 <template>
   <div>
-    
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
       <!-- Левая колонка - информация о пользователе -->
       <div style="background-color: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
@@ -8,7 +7,7 @@
         
         <div style="margin-bottom: 15px;">
           <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
-            <!-- Аватар пользователя (как в левой панели) -->
+            <!-- Аватар пользователя -->
             <div style="width: 60px; height: 60px; border-radius: 50%; border: 2px solid black; background-color: white; display: flex; align-items: center; justify-content: center; color: black; font-size: 24px; font-weight: bold;">
               {{ userInitials }}
             </div>
@@ -47,13 +46,30 @@
                   borderRadius: '4px', 
                   fontSize: '12px',
                   fontWeight: '500',
-                  backgroundColor: userData.role === 'Администратор' ? '#e3f2fd' : '#f5f5f5',
-                  color: userData.role === 'Администратор' ? '#1976d2' : '#666'
+                  backgroundColor: userData.admin_role ? '#e3f2fd' : '#f5f5f5',
+                  color: userData.admin_role ? '#1976d2' : '#666'
                 }">
-                  {{ userData.role }}
+                  {{ userData.admin_role ? 'Администратор' : 'Пользователь' }}
                 </span>
               </div>
             </div>
+
+            <div style="display: flex; margin-bottom: 10px;" v-if="userData.id">
+              <div style="width: 120px; font-weight: 500; color: #666;">ID:</div>
+              <div>{{ userData.id }}</div>
+            </div>
+          </div>
+
+          <!-- Кнопка обновления данных -->
+          <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+            <button 
+              @click="refreshUserData"
+              style="padding: 8px 16px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
+              :disabled="loading"
+            >
+              <span v-if="loading">⟳ Обновление...</span>
+              <span v-else>⟳ Обновить данные</span>
+            </button>
           </div>
         </div>
       </div>
@@ -69,6 +85,7 @@
               v-model="passwordForm.currentPassword" 
               :type="showCurrentPassword ? 'text' : 'password'"
               style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+              :disabled="passwordLoading"
             >
             <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
               <button 
@@ -87,6 +104,7 @@
               v-model="passwordForm.newPassword" 
               :type="showNewPassword ? 'text' : 'password'"
               style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+              :disabled="passwordLoading"
             >
             <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
               <button 
@@ -105,6 +123,7 @@
               v-model="passwordForm.confirmPassword" 
               :type="showConfirmPassword ? 'text' : 'password'"
               style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+              :disabled="passwordLoading"
             >
             <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
               <button 
@@ -122,14 +141,16 @@
               type="button"
               @click="resetPasswordForm"
               style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;"
+              :disabled="passwordLoading"
             >
               Очистить
             </button>
             <button 
               type="submit"
               style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;"
+              :disabled="passwordLoading"
             >
-              Изменить пароль
+              {{ passwordLoading ? 'Изменение...' : 'Изменить пароль' }}
             </button>
           </div>
         </form>
@@ -150,7 +171,7 @@
     <Dialog
       v-model:show="showSuccessDialog"
       title="Успешно!"
-      message="Пароль успешно изменен"
+      :message="successMessage"
       confirmText="ОК"
       @confirm="showSuccessDialog = false"
     />
@@ -167,29 +188,44 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Dialog from '../components/blocks/Dialog.vue'
 
-// Данные пользователя (в реальном проекте получать из стора/БД)
+const router = useRouter()
+const loading = ref(false)
+const passwordLoading = ref(false)
+
+// Данные пользователя из localStorage
 const userData = ref({
-  id: 1,
-  login: 'admin',
-  surname: 'Иванов',
-  name: 'Иван',
-  patronymic: 'Иванович',
-  role: 'Администратор'
+  id: null,
+  login: '',
+  surname: '',
+  name: '',
+  patronymic: '',
+  admin_role: false
 })
+
+// Состояние диалогов
+const showSuccessDialog = ref(false)
+const showErrorDialog = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
 
 // Вычисляемые значения
 const userInitials = computed(() => {
-  return (userData.value.surname.charAt(0) + userData.value.name.charAt(0)).toUpperCase()
+  if (userData.value.surname && userData.value.name) {
+    return (userData.value.surname.charAt(0) + userData.value.name.charAt(0)).toUpperCase()
+  }
+  return '??'
 })
 
 const userFullName = computed(() => {
-  return `${userData.value.surname} ${userData.value.name} ${userData.value.patronymic || ''}`.trim()
+  const parts = [userData.value.surname, userData.value.name, userData.value.patronymic]
+  return parts.filter(p => p && p.trim()).join(' ').trim() || 'Не указано'
 })
 
-const userRole = computed(() => userData.value.role)
+const userRole = computed(() => userData.value.admin_role ? 'Администратор' : 'Пользователь')
 
 // Форма изменения пароля
 const passwordForm = ref({
@@ -203,17 +239,64 @@ const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// Диалоги
-const showSuccessDialog = ref(false)
-const showErrorDialog = ref(false)
-const errorMessage = ref('')
+// Загрузка данных пользователя
+const loadUserData = () => {
+  try {
+    // Пробуем получить данные из localStorage
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      userData.value = JSON.parse(storedUser)
+    } else {
+      // Если данных нет, пробуем получить через токен
+      refreshUserData()
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error)
+    errorMessage.value = 'Ошибка загрузки данных пользователя'
+    showErrorDialog.value = true
+  }
+}
 
-// Сброс формы пароля
-const resetPasswordForm = () => {
-  passwordForm.value = {
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+// Обновление данных пользователя с сервера
+const refreshUserData = async () => {
+  const token = localStorage.getItem('access_token')
+  alert(token)
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  loading.value = true
+  try {
+    const response = await fetch('http://localhost:8000/users/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Токен невалидный, перенаправляем на login
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('token_type')
+        localStorage.removeItem('user')
+        router.push('/login')
+        return
+      }
+      throw new Error('Ошибка получения данных')
+    }
+
+    const data = await response.json()
+    userData.value = data
+    localStorage.setItem('user', JSON.stringify(data))
+    successMessage.value = 'Данные успешно обновлены'
+    showSuccessDialog.value = true
+  } catch (error) {
+    console.error('Error refreshing user data:', error)
+    errorMessage.value = error.message || 'Ошибка обновления данных'
+    showErrorDialog.value = true
+  } finally {
+    loading.value = false
   }
 }
 
@@ -226,7 +309,7 @@ const validatePassword = (password) => {
 }
 
 // Смена пароля
-const changePassword = () => {
+const changePassword = async () => {
   // Проверка заполнения всех полей
   if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
     errorMessage.value = 'Заполните все поля'
@@ -248,26 +331,63 @@ const changePassword = () => {
     return
   }
 
-  // Проверка текущего пароля (в реальности здесь будет запрос к API)
-  if (passwordForm.value.currentPassword !== 'password') { // Заглушка
-    errorMessage.value = 'Неверный текущий пароль'
-    showErrorDialog.value = true
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
     return
   }
 
-  // Здесь будет запрос к API для смены пароля
-  console.log('Смена пароля:', {
-    currentPassword: passwordForm.value.currentPassword,
-    newPassword: passwordForm.value.newPassword
-  })
+  passwordLoading.value = true
+  try {
+    const response = await fetch('http://localhost:8000/users/change-password', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        current_password: passwordForm.value.currentPassword,
+        new_password: passwordForm.value.newPassword
+      })
+    })
 
-  // Успех
-  showSuccessDialog.value = true
-  resetPasswordForm()
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Ошибка при смене пароля')
+    }
+
+    // Успех
+    successMessage.value = 'Пароль успешно изменен'
+    showSuccessDialog.value = true
+    resetPasswordForm()
+  } catch (error) {
+    console.error('Password change error:', error)
+    errorMessage.value = error.message || 'Ошибка при смене пароля'
+    showErrorDialog.value = true
+  } finally {
+    passwordLoading.value = false
+  }
 }
 
-// Для демонстрации разных ролей можно менять:
-// userData.value.role = 'Метролог'
+// Сброс формы пароля
+const resetPasswordForm = () => {
+  passwordForm.value = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  }
+}
+
+// Проверка авторизации при загрузке
+onMounted(() => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+  loadUserData()
+})
 </script>
 
 <style scoped>
