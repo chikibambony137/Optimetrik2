@@ -20,7 +20,7 @@ router = APIRouter(prefix="/measurement-instruments", tags=["Средства и
 @router.get("/", response_model=List[MeasurementInstrumentRead])
 def get_instruments(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),  # Любой авторизованный
+    current_user: User = Depends(get_current_user),  # Любой авторизованный
     skip: int = 0,
     limit: int = 100,
     type_id: Optional[int] = None
@@ -42,7 +42,7 @@ def get_instruments(
 def get_instrument(
     instrument_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)  # Любой авторизованный
+    current_user: User = Depends(get_current_user)  # Любой авторизованный
 ):
     """
     Получить средство измерения по ID
@@ -63,7 +63,7 @@ def get_instrument(
 def create_instrument(
     instrument_data: MeasurementInstrumentCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Создать новое средство измерения (только для администратора)
@@ -108,7 +108,7 @@ def update_instrument(
     instrument_id: int,
     instrument_data: MeasurementInstrumentUpdate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Обновить средство измерения (только для администратора)
@@ -161,7 +161,7 @@ def update_instrument(
 def delete_instrument(
     instrument_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Удалить средство измерения (только для администратора)
@@ -193,7 +193,7 @@ def delete_instrument(
 def get_instrument_verifications(
     instrument_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить историю поверок средства измерения

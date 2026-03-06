@@ -14,7 +14,7 @@ router = APIRouter(prefix="/measurement-types", tags=["Типы средств �
 @router.get("/", response_model=List[MeasurementTypeRead])
 def get_measurement_types(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),  # Любой авторизованный
+    current_user: User = Depends(get_current_user),  # Любой авторизованный
     skip: int = 0,
     limit: int = 100
 ):
@@ -29,7 +29,7 @@ def get_measurement_types(
 def get_measurement_type(
     type_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)  # Любой авторизованный
+    current_user: User = Depends(get_current_user)  # Любой авторизованный
 ):
     """
     Получить тип средства измерения по ID
@@ -47,7 +47,7 @@ def get_measurement_type(
 def create_measurement_type(
     type_data: MeasurementTypeCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Создать новый тип средства измерения (только для администратора)
@@ -81,7 +81,7 @@ def update_measurement_type(
     type_id: int,
     type_data: MeasurementTypeUpdate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Обновить тип средства измерения (только для администратора)
@@ -121,7 +121,7 @@ def update_measurement_type(
 def delete_measurement_type(
     type_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Удалить тип средства измерения (только для администратора)
@@ -150,7 +150,7 @@ def delete_measurement_type(
 def get_instruments_by_type(
     type_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить все средства измерения данного типа

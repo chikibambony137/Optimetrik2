@@ -29,7 +29,7 @@ router = APIRouter(prefix="/verifications", tags=["Поверки"])
 @router.get("/", response_model=List[VerificationListRead])
 def get_verifications(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100,
     completed: Optional[bool] = None,
@@ -88,7 +88,7 @@ def get_verifications(
 def get_verification(
     verification_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить детальную информацию о поверке по ID
@@ -167,7 +167,7 @@ def get_verification(
 def create_verification(
     verification_data: VerificationCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Создать новую поверку (только планируемая дата и дата поступления)
@@ -211,7 +211,7 @@ def fill_test_data(
     verification_id: int,
     test_data: VerificationTestData,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Заполнить данные тестирования для поверки
@@ -292,7 +292,7 @@ def complete_verification(
     verification_id: int,
     complete_data: VerificationComplete,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Завершить поверку с автоматическим расчетом дат
@@ -354,7 +354,7 @@ def complete_verification(
     verification.valid_until = valid_until
     verification.id_type = complete_data.id_type
     verification.id_result = complete_data.id_result
-    verification.id_metrologist = 1 ## current_user.id
+    verification.id_metrologist = current_user.id
     
     db.commit()
     db.refresh(verification)
@@ -366,7 +366,7 @@ def complete_verification(
 def delete_verification(
     verification_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Удалить поверку (только для администратора)
@@ -397,7 +397,7 @@ def delete_verification(
 @router.get("/stats/summary", response_model=dict)
 def get_verification_stats(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
     year: Optional[int] = None
 ):
     """

@@ -13,7 +13,7 @@ router = APIRouter(prefix="/results", tags=["Результаты поверки
 @router.get("/", response_model=List[ResultRead])
 def get_results(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить список всех результатов поверки
@@ -26,7 +26,7 @@ def get_results(
 def get_result(
     result_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить результат по ID
@@ -44,7 +44,7 @@ def get_result(
 def create_result(
     result_data: ResultCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Создать новый результат поверки (только для администратора)

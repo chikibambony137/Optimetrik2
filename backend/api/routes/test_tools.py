@@ -18,7 +18,7 @@ router = APIRouter(prefix="/test-tools", tags=["Тестовые стенды"])
 @router.get("/", response_model=List[TestToolRead])
 def get_test_tools(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),  # Раскомментировал
+    current_user: User = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100,
     active_only: bool = False
@@ -39,7 +39,7 @@ def get_test_tools(
 @router.get("/active", response_model=List[TestToolRead])
 def get_active_test_tools(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)  # Раскомментировал
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить только активные тестовые стенды
@@ -52,7 +52,7 @@ def get_active_test_tools(
 def get_test_tool(
     tool_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)  # Раскомментировал
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить тестовый стенд по ID
@@ -70,7 +70,7 @@ def get_test_tool(
 def create_test_tool(
     tool_data: TestToolCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Раскомментировал, только админ
+    current_user: User = Depends(get_current_admin_user)  # только админ
 ):
     """
     Создать новый тестовый стенд (только для администратора)
@@ -103,7 +103,7 @@ def update_test_tool(
     tool_id: int,
     tool_data: TestToolUpdate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Раскомментировал, только админ
+    current_user: User = Depends(get_current_admin_user)  # только админ
 ):
     """
     Обновить тестовый стенд (только для администратора)
@@ -141,7 +141,7 @@ def update_test_tool(
 def delete_test_tool(
     tool_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Раскомментировал, только админ
+    current_user: User = Depends(get_current_admin_user)  # только админ
 ):
     """
     Удалить тестовый стенд (только для администратора)
@@ -170,7 +170,7 @@ def delete_test_tool(
 def toggle_test_tool_active(
     tool_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Раскомментировал, только админ
+    current_user: User = Depends(get_current_admin_user)  # только админ
 ):
     """
     Переключить статус активности стенда (только для администратора)
@@ -193,7 +193,7 @@ def toggle_test_tool_active(
 def get_tool_verifications(
     tool_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)  # Раскомментировал
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить все поверки, проведенные на данном стенде
@@ -233,7 +233,7 @@ def get_tool_verifications(
 def get_tool_stats(
     tool_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить статистику использования стенда

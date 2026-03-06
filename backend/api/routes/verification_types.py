@@ -13,7 +13,7 @@ router = APIRouter(prefix="/verification-types", tags=["Типы поверок"
 @router.get("/", response_model=List[VerificationTypeRead])
 def get_verification_types(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить список всех типов поверок
@@ -26,7 +26,7 @@ def get_verification_types(
 def get_verification_type(
     type_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить тип поверки по ID
@@ -44,7 +44,7 @@ def get_verification_type(
 def create_verification_type(
     type_data: VerificationTypeCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Создать новый тип поверки (только для администратора)

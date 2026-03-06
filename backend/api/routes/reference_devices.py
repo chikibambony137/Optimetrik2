@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from datetime import date, datetime
+from models.user import User
 
 from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.reference_device import ReferenceDevice
@@ -18,7 +19,7 @@ router = APIRouter(prefix="/reference-devices", tags=["Эталонные сре
 @router.get("/", response_model=List[ReferenceDeviceRead])
 def get_reference_devices(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user),  # Любой авторизованный
+    current_user: User = Depends(get_current_user),  # Любой авторизованный
     skip: int = 0,
     limit: int = 100,
     valid_only: bool = False
@@ -40,7 +41,7 @@ def get_reference_devices(
 def get_reference_device(
     device_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить эталон по ID
@@ -58,7 +59,7 @@ def get_reference_device(
 def create_reference_device(
     device_data: ReferenceDeviceCreate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Создать новый эталон (только для администратора)
@@ -99,7 +100,7 @@ def update_reference_device(
     device_id: int,
     device_data: ReferenceDeviceUpdate,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Обновить эталон (только для администратора)
@@ -146,7 +147,7 @@ def update_reference_device(
 def delete_reference_device(
     device_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_admin_user)  # Только админ
+    current_user: User = Depends(get_current_admin_user)  # Только админ
 ):
     """
     Удалить эталон (только для администратора)
@@ -175,7 +176,7 @@ def delete_reference_device(
 def get_device_usage(
     device_id: int,
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Получить историю использования эталона в поверках
