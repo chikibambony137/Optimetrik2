@@ -60,7 +60,7 @@
           </select>
         </div>
 
-        <!-- Фильтр по результату (из базы данных) -->
+        <!-- Фильтр по результату -->
         <div>
           <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">Результат</label>
           <select v-model="filters.resultId" style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
@@ -71,24 +71,13 @@
           </select>
         </div>
 
-        <!-- Фильтр по типу поверки (из базы данных) -->
+        <!-- Фильтр по типу поверки -->
         <div>
           <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">Тип поверки</label>
           <select v-model="filters.typeId" style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
             <option value="all">Все типы</option>
             <option v-for="type in verificationTypes" :key="type.id" :value="type.id">
               {{ type.type_name }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Фильтр по типу СИ -->
-        <div>
-          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">Тип СИ</label>
-          <select v-model="filters.measurementTypeId" style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
-            <option value="all">Все типы</option>
-            <option v-for="type in measurementTypes" :key="type.id" :value="type.id">
-              {{ type.name_company }} {{ type.batch_number }}
             </option>
           </select>
         </div>
@@ -119,7 +108,6 @@
           <tr style="background-color: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
             <th style="padding: 12px 15px; text-align: left;">ID</th>
             <th style="padding: 12px 15px; text-align: left;">Серийный номер</th>
-            <th style="padding: 12px 15px; text-align: left;">Тип СИ</th>
             <th style="padding: 12px 15px; text-align: left;">Тип поверки</th>
             <th style="padding: 12px 15px; text-align: left;">Статус</th>
             <th style="padding: 12px 15px; text-align: left;">Результат</th>
@@ -133,15 +121,18 @@
           <tr v-for="item in filteredData" :key="item.id" style="border-bottom: 1px solid #e0e0e0;">
             <td style="padding: 12px 15px;">{{ item.id }}</td>
             <td style="padding: 12px 15px;">{{ item.instrument_serial }}</td>
-            <td style="padding: 12px 15px;">
-              <span v-if="item.measurement_type">
-                {{ item.measurement_type.name_company }} {{ item.measurement_type.batch_number }}
-              </span>
-              <span v-else>—</span>
-            </td>
             <td style="padding: 12px 15px;">{{ item.type_name || '—' }}</td>
             <td style="padding: 12px 15px;">
-              <span :style="{ 
+              <select 
+                v-if="canEditStatus(item)"
+                v-model="item.is_completed"
+                @change="updateStatus(item)"
+                style="padding: 4px 8px; border: 1px solid #e0e0e0; border-radius: 4px; font-size: 12px;"
+              >
+                <option :value="false">В процессе</option>
+                <option :value="true">Завершена</option>
+              </select>
+              <span v-else :style="{ 
                 padding: '4px 8px', 
                 borderRadius: '4px', 
                 fontSize: '12px',
@@ -172,14 +163,14 @@
             <!-- Кнопки действий -->
             <td style="padding: 12px 15px; text-align: center;">
               <div style="display: flex; gap: 8px; justify-content: center;">
-                <!-- Кнопка завершения для всех (только для незавершенных) -->
+                <!-- Кнопка заполнения данных (только для незавершенных и если пользователь - метролог этой поверки или админ) -->
                 <button 
-                  v-if="!item.is_completed"
-                  @click="openCompleteModal(item)" 
+                  v-if="!item.is_completed && (canEditVerification(item))"
+                  @click="openFillDataModal(item)" 
                   style="background: none; border: 1px solid #e0e0e0; border-radius: 4px; padding: 4px 8px; cursor: pointer; color: #1976d2;"
-                  title="Завершить поверку"
+                  title="Заполнить данные тестирования"
                 >
-                  ✅ Завершить
+                  📝 Данные
                 </button>
                 
                 <!-- Кнопки для админа -->
@@ -203,7 +194,7 @@
             </td>
           </tr>
           <tr v-if="filteredData.length === 0">
-            <td colspan="10" style="padding: 40px; text-align: center; color: #999;">
+            <td colspan="9" style="padding: 40px; text-align: center; color: #999;">
               Нет данных, соответствующих критериям поиска
             </td>
           </tr>
@@ -221,7 +212,7 @@
           <select v-model="addForm.id_instrument" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
             <option value="">Выберите средство измерения</option>
             <option v-for="instrument in instruments" :key="instrument.id" :value="instrument.id">
-              {{ instrument.serial_number }} ({{ getInstrumentTypeName(instrument) }})
+              {{ instrument.serial_number }}
             </option>
           </select>
         </div>
@@ -238,8 +229,78 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <button @click="closeAddModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
-          <button @click="createVerification" :disabled="saving || !isAddFormValid" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+          <button @click="createVerification" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
             {{ saving ? 'Сохранение...' : 'Создать' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно для заполнения данных тестирования -->
+    <div v-if="showTestDataModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" @click.self="closeTestDataModal">
+      <div style="background-color: white; border-radius: 12px; padding: 25px; width: 600px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 18px;">Данные тестирования</h3>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Серийный номер</label>
+          <input :value="testDataForm.serialNumber" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: #f5f5f5;" disabled>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Температура (°C)</label>
+            <input v-model="testDataForm.temperature" type="number" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
+          </div>
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Давление (мм рт. ст.)</label>
+            <input v-model="testDataForm.pressure" type="number" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Влажность (%)</label>
+          <input v-model="testDataForm.wetness" type="number" step="0.1" min="0" max="100" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Результаты тестов</label>
+          <div style="display: flex; gap: 20px; margin-top: 5px;">
+            <label style="display: flex; align-items: center; gap: 5px;">
+              <input type="checkbox" v-model="testDataForm.complete_electric_test"> Электрический тест
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px;">
+              <input type="checkbox" v-model="testDataForm.complete_voltage_test"> Тест напряжения
+            </label>
+            <label style="display: flex; align-items: center; gap: 5px;">
+              <input type="checkbox" v-model="testDataForm.complete_isolation_test"> Тест изоляции
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Использованные эталоны</label>
+          <select v-model="testDataForm.id_reference_devices" multiple style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; min-height: 100px;" required>
+            <option v-for="device in referenceDevices" :key="device.id" :value="device.id">
+              {{ device.serial_number }} (валиден до {{ formatDate(device.valid_for) }})
+            </option>
+          </select>
+          <small style="color: #666;">Удерживайте Ctrl для выбора нескольких</small>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Использованные стенды</label>
+          <select v-model="testDataForm.id_test_tools" multiple style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; min-height: 100px;" required>
+            <option v-for="tool in testTools" :key="tool.id" :value="tool.id">
+              {{ tool.serial_number }} {{ tool.active ? '(активен)' : '(неактивен)' }}
+            </option>
+          </select>
+          <small style="color: #666;">Удерживайте Ctrl для выбора нескольких</small>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button @click="closeTestDataModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
+          <button @click="saveTestData" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            {{ saving ? 'Сохранение...' : 'Сохранить данные' }}
           </button>
         </div>
       </div>
@@ -253,11 +314,6 @@
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Серийный номер</label>
           <input :value="completeForm.serialNumber" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: #f5f5f5;" disabled>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Тип СИ</label>
-          <input :value="completeForm.typeName" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: #f5f5f5;" disabled>
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -280,84 +336,15 @@
           </select>
         </div>
 
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Фактическая дата</label>
           <input v-model="completeForm.real_date_verification" type="date" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
         </div>
 
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Валиден до</label>
-          <input v-model="completeForm.valid_until" type="date" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
-        </div>
-
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
           <button @click="closeCompleteModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
-          <button @click="completeVerification" :disabled="saving || !isCompleteFormValid" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+          <button @click="completeVerification" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
             {{ saving ? 'Сохранение...' : 'Завершить' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Модальное окно для редактирования (только админ) -->
-    <div v-if="showEditModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" @click.self="closeEditModal">
-      <div style="background-color: white; border-radius: 12px; padding: 25px; width: 600px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-        <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 18px;">Редактировать поверку</h3>
-        
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">ID поверки</label>
-          <input :value="editForm.id" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: #f5f5f5;" disabled>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Серийный номер</label>
-          <input :value="editForm.instrument_serial" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: #f5f5f5;" disabled>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Тип СИ</label>
-          <input :value="editForm.measurement_type_name" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: #f5f5f5;" disabled>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Результат</label>
-          <select v-model="editForm.id_result" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
-            <option value="">Выберите результат</option>
-            <option v-for="result in results" :key="result.id" :value="result.id">
-              {{ result.result_name }}
-            </option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Тип поверки</label>
-          <select v-model="editForm.id_type" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
-            <option value="">Выберите тип</option>
-            <option v-for="type in verificationTypes" :key="type.id" :value="type.id">
-              {{ type.type_name }}
-            </option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Планируемая дата</label>
-          <input v-model="editForm.planned_date_verification" type="date" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" required>
-        </div>
-
-        <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Фактическая дата</label>
-          <input v-model="editForm.real_date_verification" type="date" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Валиден до</label>
-          <input v-model="editForm.valid_until" type="date" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button @click="closeEditModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
-          <button @click="updateVerification" :disabled="saving || !isEditFormValid" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-            {{ saving ? 'Сохранение...' : 'Сохранить' }}
           </button>
         </div>
       </div>
@@ -400,6 +387,9 @@ import Dialog from '../components/blocks/Dialog.vue'
 const router = useRouter()
 const API_BASE_URL = 'http://localhost:8000'
 
+// Текущий пользователь
+const currentUser = ref(null)
+
 // Роль пользователя
 const userRole = ref('Метролог')
 const loading = ref(false)
@@ -412,7 +402,6 @@ const filters = ref({
   completed: 'all',
   resultId: 'all',
   typeId: 'all',
-  measurementTypeId: 'all',
   plannedFrom: '',
   plannedTo: ''
 })
@@ -423,15 +412,17 @@ const showSuccessDialog = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
 
-// Данные из базы
+// Данные
 const tableData = ref([])
 const instruments = ref([])
-const measurementTypes = ref([])
 const results = ref([])
 const verificationTypes = ref([])
+const referenceDevices = ref([])
+const testTools = ref([])
 
 // Модальные окна
 const showAddModal = ref(false)
+const showTestDataModal = ref(false)
 const showCompleteModal = ref(false)
 const showEditModal = ref(false)
 
@@ -442,61 +433,65 @@ const addForm = ref({
   date_receipt: ''
 })
 
+const testDataForm = ref({
+  id: null,
+  serialNumber: '',
+  temperature: 20,
+  pressure: 760,
+  wetness: 50,
+  complete_electric_test: false,
+  complete_voltage_test: false,
+  complete_isolation_test: false,
+  id_reference_devices: [],
+  id_test_tools: []
+})
+
 const completeForm = ref({
   id: null,
   serialNumber: '',
-  typeName: '',
   id_result: '',
   id_type: '',
-  real_date_verification: '',
-  valid_until: ''
+  real_date_verification: ''
 })
 
 const editForm = ref({
   id: null,
   instrument_serial: '',
-  measurement_type_name: '',
-  id_result: '',
-  id_type: '',
   planned_date_verification: '',
-  real_date_verification: '',
-  valid_until: ''
+  date_receipt: '',
+  id_result: '',
+  id_type: ''
 })
 
-// Валидация форм
-const isAddFormValid = computed(() => {
-  return addForm.value.id_instrument && 
-         addForm.value.planned_date_verification && 
-         addForm.value.date_receipt
-})
-
-const isCompleteFormValid = computed(() => {
-  return completeForm.value.id_result && 
-         completeForm.value.id_type && 
-         completeForm.value.real_date_verification && 
-         completeForm.value.valid_until
-})
-
-const isEditFormValid = computed(() => {
-  return editForm.value.id_result && 
-         editForm.value.id_type && 
-         editForm.value.planned_date_verification
-})
-
-// Загрузка роли пользователя
-const loadUserRole = () => {
+// Загрузка текущего пользователя
+const loadCurrentUser = () => {
   try {
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
-      const user = JSON.parse(storedUser)
-      userRole.value = user.admin_role ? 'Администратор' : 'Метролог'
+      currentUser.value = JSON.parse(storedUser)
+      userRole.value = currentUser.value.admin_role ? 'Администратор' : 'Метролог'
     }
   } catch (error) {
-    console.error('Error loading user role:', error)
+    console.error('Error loading current user:', error)
   }
 }
 
-// Загрузка результатов поверки из базы данных
+// Проверка может ли пользователь редактировать поверку
+const canEditVerification = (verification) => {
+  if (userRole.value === 'Администратор') return true
+  // Если у поверки нет метролога, то любой может редактировать
+  if (!verification.id_metrologist) return true
+  // Если есть метролог, то только он может редактировать
+  return currentUser.value && verification.id_metrologist === currentUser.value.id
+}
+
+// Проверка может ли пользователь менять статус
+const canEditStatus = (verification) => {
+  // Статус может менять только админ или метролог этой поверки
+  return canEditVerification(verification)
+}
+
+// Загрузка справочных данных
 const loadResults = async () => {
   const token = localStorage.getItem('access_token')
   if (!token) return
@@ -507,14 +502,12 @@ const loadResults = async () => {
     })
     if (response.ok) {
       results.value = await response.json()
-      console.log('Загружены результаты:', results.value)
     }
   } catch (error) {
     console.error('Error loading results:', error)
   }
 }
 
-// Загрузка типов поверки из базы данных
 const loadVerificationTypes = async () => {
   const token = localStorage.getItem('access_token')
   if (!token) return
@@ -525,32 +518,44 @@ const loadVerificationTypes = async () => {
     })
     if (response.ok) {
       verificationTypes.value = await response.json()
-      console.log('Загружены типы поверок:', verificationTypes.value)
     }
   } catch (error) {
     console.error('Error loading verification types:', error)
   }
 }
 
-// Загрузка типов СИ
-const loadMeasurementTypes = async () => {
+const loadReferenceDevices = async () => {
   const token = localStorage.getItem('access_token')
   if (!token) return
 
   try {
-    const response = await fetch(`${API_BASE_URL}/measurement-types/`, {
+    const response = await fetch(`${API_BASE_URL}/reference-devices/`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (response.ok) {
-      measurementTypes.value = await response.json()
-      console.log('Загружены типы СИ:', measurementTypes.value)
+      referenceDevices.value = await response.json()
     }
   } catch (error) {
-    console.error('Error loading measurement types:', error)
+    console.error('Error loading reference devices:', error)
   }
 }
 
-// Загрузка средств измерения
+const loadTestTools = async () => {
+  const token = localStorage.getItem('access_token')
+  if (!token) return
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/test-tools/`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    if (response.ok) {
+      testTools.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Error loading test tools:', error)
+  }
+}
+
 const loadInstruments = async () => {
   const token = localStorage.getItem('access_token')
   if (!token) return
@@ -560,36 +565,14 @@ const loadInstruments = async () => {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (response.ok) {
-      const data = await response.json()
-      
-      // Загружаем типы для каждого СИ
-      for (let inst of data) {
-        if (inst.id_type_instrument) {
-          const typeResponse = await fetch(`${API_BASE_URL}/measurement-types/${inst.id_type_instrument}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
-          if (typeResponse.ok) {
-            inst.type = await typeResponse.json()
-          }
-        }
-      }
-      instruments.value = data
-      console.log('Загружены СИ:', instruments.value)
+      instruments.value = await response.json()
     }
   } catch (error) {
     console.error('Error loading instruments:', error)
   }
 }
 
-// Получение названия типа СИ для отображения
-const getInstrumentTypeName = (instrument) => {
-  if (instrument.type) {
-    return `${instrument.type.name_company} ${instrument.type.batch_number}`
-  }
-  return 'Неизвестный тип'
-}
-
-// Загрузка поверок из базы данных
+// Загрузка поверок
 const loadVerifications = async () => {
   const token = localStorage.getItem('access_token')
   if (!token) {
@@ -625,28 +608,7 @@ const loadVerifications = async () => {
       throw new Error('Ошибка загрузки поверок')
     }
 
-    const data = await response.json()
-    
-    // Загружаем детальную информацию для каждой поверки
-    for (let item of data) {
-      try {
-        const detailResponse = await fetch(`${API_BASE_URL}/verifications/${item.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
-        if (detailResponse.ok) {
-          const detail = await detailResponse.json()
-          item.measurement_type = detail.measurement_type
-          item.id_type = detail.id_type
-          item.id_result = detail.id_result
-          item.type_name = detail.type_name
-          item.result_name = detail.result_name
-        }
-      } catch (err) {
-        console.error(`Error loading details for verification ${item.id}:`, err)
-      }
-    }
-    
-    tableData.value = data
+    tableData.value = await response.json()
     console.log('Загружены поверки:', tableData.value)
   } catch (error) {
     console.error('Error loading verifications:', error)
@@ -667,10 +629,7 @@ const filteredData = computed(() => {
     data = data.filter(item => 
       item.instrument_serial?.toLowerCase().includes(query) ||
       item.type_name?.toLowerCase().includes(query) ||
-      item.result_name?.toLowerCase().includes(query) ||
-      (item.measurement_type && 
-        (item.measurement_type.name_company?.toLowerCase().includes(query) ||
-         item.measurement_type.batch_number?.toLowerCase().includes(query)))
+      item.result_name?.toLowerCase().includes(query)
     )
   }
 
@@ -682,13 +641,6 @@ const filteredData = computed(() => {
   // Фильтр по типу поверки
   if (filters.value.typeId !== 'all') {
     data = data.filter(item => item.id_type == filters.value.typeId)
-  }
-
-  // Фильтр по типу СИ
-  if (filters.value.measurementTypeId !== 'all') {
-    data = data.filter(item => 
-      item.measurement_type && item.measurement_type.id == filters.value.measurementTypeId
-    )
   }
 
   return data
@@ -706,7 +658,6 @@ const resetFilters = () => {
     completed: 'all',
     resultId: 'all',
     typeId: 'all',
-    measurementTypeId: 'all',
     plannedFrom: '',
     plannedTo: ''
   }
@@ -718,6 +669,49 @@ const formatDate = (dateStr) => {
   if (!dateStr) return '—'
   const date = new Date(dateStr)
   return date.toLocaleDateString('ru-RU')
+}
+
+// Обновление статуса
+const updateStatus = async (item) => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    // Если статус меняется на "Завершена", открываем модальное окно завершения
+    if (item.is_completed) {
+      openCompleteModal(item)
+    } else {
+      // Если статус меняется на "В процессе", просто обновляем через API
+      const response = await fetch(`${API_BASE_URL}/verifications/${item.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          real_date_verification: null
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Ошибка при обновлении статуса')
+      }
+
+      successMessage.value = 'Статус обновлен'
+      showSuccessDialog.value = true
+      loadVerifications()
+    }
+  } catch (error) {
+    console.error('Error updating status:', error)
+    errorMessage.value = error.message || 'Ошибка при обновлении статуса'
+    showErrorDialog.value = true
+    // Возвращаем старое значение
+    item.is_completed = !item.is_completed
+  }
 }
 
 // Добавление поверки
@@ -736,7 +730,7 @@ const closeAddModal = () => {
 }
 
 const createVerification = async () => {
-  if (!isAddFormValid.value) {
+  if (!addForm.value.id_instrument || !addForm.value.planned_date_verification || !addForm.value.date_receipt) {
     errorMessage.value = 'Заполните все поля'
     showErrorDialog.value = true
     return
@@ -777,24 +771,105 @@ const createVerification = async () => {
   }
 }
 
+// Заполнение данных тестирования
+const openFillDataModal = (item) => {
+  if (!canEditVerification(item)) {
+    errorMessage.value = 'У вас нет прав для редактирования этой поверки'
+    showErrorDialog.value = true
+    return
+  }
+
+  testDataForm.value = {
+    id: item.id,
+    serialNumber: item.instrument_serial,
+    temperature: 20,
+    pressure: 760,
+    wetness: 50,
+    complete_electric_test: false,
+    complete_voltage_test: false,
+    complete_isolation_test: false,
+    id_reference_devices: [],
+    id_test_tools: []
+  }
+  loadReferenceDevices()
+  loadTestTools()
+  showTestDataModal.value = true
+}
+
+const closeTestDataModal = () => {
+  showTestDataModal.value = false
+}
+
+const saveTestData = async () => {
+  if (!testDataForm.value.temperature || !testDataForm.value.pressure || !testDataForm.value.wetness) {
+    errorMessage.value = 'Заполните все параметры окружающей среды'
+    showErrorDialog.value = true
+    return
+  }
+
+  if (testDataForm.value.id_reference_devices.length === 0) {
+    errorMessage.value = 'Выберите хотя бы один эталон'
+    showErrorDialog.value = true
+    return
+  }
+
+  if (testDataForm.value.id_test_tools.length === 0) {
+    errorMessage.value = 'Выберите хотя бы один стенд'
+    showErrorDialog.value = true
+    return
+  }
+
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  saving.value = true
+  try {
+    const response = await fetch(`${API_BASE_URL}/verifications/${testDataForm.value.id}/test-data`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        temperature: parseFloat(testDataForm.value.temperature),
+        pressure: parseFloat(testDataForm.value.pressure),
+        wetness: parseFloat(testDataForm.value.wetness),
+        complete_electric_test: testDataForm.value.complete_electric_test,
+        complete_voltage_test: testDataForm.value.complete_voltage_test,
+        complete_isolation_test: testDataForm.value.complete_isolation_test,
+        id_reference_devices: testDataForm.value.id_reference_devices,
+        id_test_tools: testDataForm.value.id_test_tools
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Ошибка при сохранении данных')
+    }
+
+    successMessage.value = 'Данные тестирования сохранены'
+    showSuccessDialog.value = true
+    closeTestDataModal()
+  } catch (error) {
+    console.error('Error saving test data:', error)
+    errorMessage.value = error.message || 'Ошибка при сохранении данных'
+    showErrorDialog.value = true
+  } finally {
+    saving.value = false
+  }
+}
+
 // Завершение поверки
 const openCompleteModal = (item) => {
-  const today = new Date().toISOString().split('T')[0]
-  
-  // Получаем информацию о типе СИ
-  let typeName = ''
-  if (item.measurement_type) {
-    typeName = `${item.measurement_type.name_company} ${item.measurement_type.batch_number}`
-  }
-  
   completeForm.value = {
     id: item.id,
     serialNumber: item.instrument_serial,
-    typeName: typeName,
-    id_result: item.id_result || '',
-    id_type: item.id_type || '',
-    real_date_verification: today,
-    valid_until: calculateValidUntil(today, item.id_type || 1)
+    id_result: '',
+    id_type: '',
+    real_date_verification: new Date().toISOString().split('T')[0]
   }
   showCompleteModal.value = true
 }
@@ -803,27 +878,8 @@ const closeCompleteModal = () => {
   showCompleteModal.value = false
 }
 
-const calculateValidUntil = (date, typeId) => {
-  const d = new Date(date)
-  const type = verificationTypes.value.find(t => t.id === typeId)
-  
-  if (type) {
-    if (type.type_name.toLowerCase().includes('первич')) {
-      d.setFullYear(d.getFullYear() + 8)
-    } else if (type.type_name.toLowerCase().includes('период')) {
-      d.setFullYear(d.getFullYear() + 4)
-    } else {
-      d.setFullYear(d.getFullYear() + 1)
-    }
-  } else {
-    d.setFullYear(d.getFullYear() + 1)
-  }
-  
-  return d.toISOString().split('T')[0]
-}
-
 const completeVerification = async () => {
-  if (!isCompleteFormValid.value) {
+  if (!completeForm.value.id_result || !completeForm.value.id_type || !completeForm.value.real_date_verification) {
     errorMessage.value = 'Заполните все поля'
     showErrorDialog.value = true
     return
@@ -846,8 +902,7 @@ const completeVerification = async () => {
       body: JSON.stringify({
         id_result: parseInt(completeForm.value.id_result),
         id_type: parseInt(completeForm.value.id_type),
-        real_date_verification: completeForm.value.real_date_verification,
-        valid_until: completeForm.value.valid_until
+        real_date_verification: completeForm.value.real_date_verification
       })
     })
 
@@ -877,20 +932,13 @@ const openEditModal = (item) => {
     return
   }
 
-  let typeName = ''
-  if (item.measurement_type) {
-    typeName = `${item.measurement_type.name_company} ${item.measurement_type.batch_number}`
-  }
-
   editForm.value = {
     id: item.id,
     instrument_serial: item.instrument_serial,
-    measurement_type_name: typeName,
-    id_result: item.id_result || '',
-    id_type: item.id_type || '',
     planned_date_verification: item.planned_date_verification || '',
-    real_date_verification: item.real_date_verification || '',
-    valid_until: item.valid_until || ''
+    date_receipt: item.date_receipt || '',
+    id_result: item.id_result || '',
+    id_type: item.id_type || ''
   }
   showEditModal.value = true
 }
@@ -900,8 +948,8 @@ const closeEditModal = () => {
 }
 
 const updateVerification = async () => {
-  if (!isEditFormValid.value) {
-    errorMessage.value = 'Заполните все обязательные поля'
+  if (!editForm.value.planned_date_verification) {
+    errorMessage.value = 'Заполните планируемую дату'
     showErrorDialog.value = true
     return
   }
@@ -915,11 +963,17 @@ const updateVerification = async () => {
   saving.value = true
   try {
     const updateData = {
-      id_result: parseInt(editForm.value.id_result),
-      id_type: parseInt(editForm.value.id_type),
-      planned_date_verification: editForm.value.planned_date_verification,
-      real_date_verification: editForm.value.real_date_verification || null,
-      valid_until: editForm.value.valid_until || null
+      planned_date_verification: editForm.value.planned_date_verification
+    }
+    
+    if (editForm.value.date_receipt) {
+      updateData.date_receipt = editForm.value.date_receipt
+    }
+    if (editForm.value.id_result) {
+      updateData.id_result = parseInt(editForm.value.id_result)
+    }
+    if (editForm.value.id_type) {
+      updateData.id_type = parseInt(editForm.value.id_type)
     }
 
     const response = await fetch(`${API_BASE_URL}/verifications/${editForm.value.id}`, {
@@ -1007,10 +1061,9 @@ onMounted(() => {
     router.push('/login')
     return
   }
-  loadUserRole()
+  loadCurrentUser()
   loadResults()
   loadVerificationTypes()
-  loadMeasurementTypes()
   loadVerifications()
 })
 </script>
