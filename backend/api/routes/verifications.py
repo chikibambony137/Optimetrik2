@@ -187,17 +187,17 @@ def create_verification(
         date_receipt=verification_data.date_receipt,
         id_instrument=verification_data.id_instrument,
         # Заполняем обязательные поля значениями по умолчанию
-        temperature=0,  # или другое значение по умолчанию
-        pressure=0,
-        wetness=0,
-        complete_electric_test=False,
-        complete_voltage_test=False,
-        complete_isolation_test=False,
-        id_result=6,  # например, "Не завершено"
-        real_date_verification=None,  # это поле может быть NULL
-        valid_until=None,  # это поле может быть NULL
-        id_type=1,  # значение по умолчанию
-        id_metrologist=1  # значение по умолчанию или current_user.id
+        # temperature=0,  # или другое значение по умолчанию
+        # pressure=0,
+        # wetness=0,
+        # complete_electric_test=False,
+        # complete_voltage_test=False,
+        # complete_isolation_test=False,
+        # id_result=6,  # например, "Не завершено"
+        # real_date_verification=None,  # это поле может быть NULL
+        # valid_until=None,  # это поле может быть NULL
+        # id_type=1,  # значение по умолчанию
+        # id_metrologist=1  # значение по умолчанию или current_user.id
     )
     
     db.add(db_verification)

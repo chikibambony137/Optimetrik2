@@ -70,6 +70,12 @@
         >
           Сбросить фильтры
         </button>
+        <button 
+          @click="applyFilters"
+          style="padding: 6px 12px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;"
+        >
+          Применить
+        </button>
       </div>
     </div>
 
@@ -304,6 +310,13 @@ const filteredData = computed(() => {
     return matchesSearch && matchesActive
   })
 })
+
+// Применить фильтры
+const applyFilters = () => {
+  showFilters.value = false
+  // Не перезагружаем с сервера, просто закрываем панель фильтров
+  // Фильтрация уже применится через computed
+}
 
 // Сбросить фильтры
 const resetFilters = () => {
