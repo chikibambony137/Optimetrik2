@@ -30,7 +30,21 @@
         >
           <span style="font-size: 18px;">+</span> Добавить
         </button>
+
+        <!-- Кнопка обновления данных -->
+        <button 
+          @click="loadReferenceDevices"
+          :disabled="loading"
+          style="background-color: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
+        >
+          <span>🔄</span> {{ loading ? 'Загрузка...' : 'Обновить' }}
+        </button>
       </div>
+    </div>
+
+    <!-- Индикатор загрузки -->
+    <div v-if="loading" style="text-align: center; padding: 40px; color: #666;">
+      Загрузка данных...
     </div>
 
     <!-- Панель фильтров -->
@@ -45,6 +59,18 @@
             <option value="valid">Валидные</option>
             <option value="expired">Просроченные</option>
           </select>
+        </div>
+
+        <!-- Фильтр по дате поступления с -->
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">Поступление с</label>
+          <input type="date" v-model="filters.admissionFrom" style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+        </div>
+
+        <!-- Фильтр по дате поступления по -->
+        <div>
+          <label style="display: block; margin-bottom: 5px; font-size: 12px; color: #666;">Поступление по</label>
+          <input type="date" v-model="filters.admissionTo" style="width: 100%; padding: 8px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
         </div>
 
         <!-- Фильтр по дате валидности с -->
@@ -78,12 +104,13 @@
     </div>
 
     <!-- Таблица -->
-    <div style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+    <div v-if="!loading" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
       <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
         <thead>
           <tr style="background-color: #f5f5f5; border-bottom: 2px solid #e0e0e0;">
+            <th style="padding: 12px 15px; text-align: left;">ID</th>
             <th style="padding: 12px 15px; text-align: left;">Серийный номер</th>
-            <th style="padding: 12px 15px; text-align: left;">Название</th>
+            <th style="padding: 12px 15px; text-align: left;">Дата поступления</th>
             <th style="padding: 12px 15px; text-align: left;">Валиден до</th>
             <!-- Колонка действий ТОЛЬКО для администратора -->
             <th v-if="userRole === 'Администратор'" style="padding: 12px 15px; text-align: center;">Действия</th>
@@ -91,19 +118,20 @@
         </thead>
         <tbody>
           <tr v-for="item in filteredData" :key="item.id" style="border-bottom: 1px solid #e0e0e0;">
-            <td style="padding: 12px 15px;">{{ item.serialNumber }}</td>
-            <td style="padding: 12px 15px;">{{ item.name }}</td>
+            <td style="padding: 12px 15px;">{{ item.id }}</td>
+            <td style="padding: 12px 15px;">{{ item.serial_number }}</td>
+            <td style="padding: 12px 15px;">{{ formatDate(item.date_admission) }}</td>
             <td style="padding: 12px 15px;">
               <span :style="{ 
                 padding: '4px 8px', 
                 borderRadius: '4px', 
                 fontSize: '12px',
                 fontWeight: '500',
-                backgroundColor: isExpired(item.validUntil) ? '#ffebee' : '#e8f5e8',
-                color: isExpired(item.validUntil) ? '#d32f2f' : '#2e7d32'
+                backgroundColor: isExpired(item.valid_for) ? '#ffebee' : '#e8f5e8',
+                color: isExpired(item.valid_for) ? '#d32f2f' : '#2e7d32'
               }">
-                {{ formatDate(item.validUntil) }}
-                <span v-if="isExpired(item.validUntil)" style="margin-left: 5px;">(просрочен)</span>
+                {{ formatDate(item.valid_for) }}
+                <span v-if="isExpired(item.valid_for)" style="margin-left: 5px;">(просрочен)</span>
               </span>
             </td>
             
@@ -128,7 +156,7 @@
             </td>
           </tr>
           <tr v-if="filteredData.length === 0">
-            <td :colspan="userRole === 'Администратор' ? 4 : 3" style="padding: 40px; text-align: center; color: #999;">
+            <td :colspan="userRole === 'Администратор' ? 5 : 4" style="padding: 40px; text-align: center; color: #999;">
               Нет данных, соответствующих критериям поиска
             </td>
           </tr>
@@ -136,30 +164,47 @@
       </table>
     </div>
 
-    <!-- Модальное окно для добавления/редактирования (без изменений) -->
+    <!-- Модальное окно для добавления/редактирования -->
     <div v-if="showModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;" @click.self="closeModal">
-      <!-- ... содержимое модального окна ... -->
       <div style="background-color: white; border-radius: 12px; padding: 25px; width: 500px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
         <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 18px;">{{ modalTitle }}</h3>
         
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Серийный номер</label>
-          <input v-model="modalForm.serialNumber" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Например: FL-87V-001">
+          <input 
+            v-model="modalForm.serial_number" 
+            type="text" 
+            style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" 
+            placeholder="Например: FL-87V-001"
+            :disabled="saving"
+          >
         </div>
 
         <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Название</label>
-          <input v-model="modalForm.name" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Например: Мультиметр Fluke 87V">
+          <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Дата поступления</label>
+          <input 
+            v-model="modalForm.date_admission" 
+            type="date" 
+            style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+            :disabled="saving"
+          >
         </div>
 
         <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Валиден до</label>
-          <input v-model="modalForm.validUntil" type="date" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;">
+          <input 
+            v-model="modalForm.valid_for" 
+            type="date" 
+            style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+            :disabled="saving"
+          >
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button @click="closeModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
-          <button @click="saveItem" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">Сохранить</button>
+          <button @click="closeModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;" :disabled="saving">Отмена</button>
+          <button @click="saveItem" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            {{ saving ? 'Сохранение...' : 'Сохранить' }}
+          </button>
         </div>
       </div>
     </div>
@@ -172,34 +217,114 @@
       confirmText="Удалить"
       @confirm="deleteItem"
     />
+
+    <!-- Диалог ошибки -->
+    <Dialog
+      v-model:show="showErrorDialog"
+      title="Ошибка"
+      :message="errorMessage"
+      confirmText="Понятно"
+      @confirm="showErrorDialog = false"
+    />
+
+    <!-- Диалог успеха -->
+    <Dialog
+      v-model:show="showSuccessDialog"
+      title="Успешно"
+      :message="successMessage"
+      confirmText="ОК"
+      @confirm="showSuccessDialog = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import Dialog from '../components/blocks/Dialog.vue'
 
+const router = useRouter()
+const API_BASE_URL = 'http://localhost:8000'
+
 // Роль пользователя
-const userRole = ref('Администратор') // Для проверки меняй на 'Метролог'
+const userRole = ref('Метролог')
+const loading = ref(false)
+const saving = ref(false)
 
 // Состояние для поиска и фильтров
 const searchQuery = ref('')
 const showFilters = ref(false)
 const filters = ref({
   validityStatus: 'all',
+  admissionFrom: '',
+  admissionTo: '',
   validFrom: '',
   validTo: ''
 })
 
+// Диалоги
+const showErrorDialog = ref(false)
+const showSuccessDialog = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+
 // Данные для таблицы
-const tableData = ref([
-  { id: 1, serialNumber: 'FL-87V-001', name: 'Мультиметр Fluke 87V', validUntil: '2026-06-15' },
-  { id: 2, serialNumber: 'FL-5500A-002', name: 'Калибратор Fluke 5500A', validUntil: '2024-12-20' },
-  { id: 3, serialNumber: 'TEK-TBS2000-003', name: 'Осциллограф Tektronix TBS2000', validUntil: '2025-03-10' },
-  { id: 4, serialNumber: 'AKIP-3409-004', name: 'Генератор сигналов АКИП-3409/4', validUntil: '2026-02-01' },
-  { id: 5, serialNumber: 'B5-71-005', name: 'Источник питания Б5-71', validUntil: '2023-08-25' },
-  { id: 6, serialNumber: 'CH3-63-006', name: 'Частотомер Ч3-63', validUntil: '2027-11-30' }
-])
+const tableData = ref([])
+
+// Загрузка роли пользователя
+const loadUserRole = () => {
+  try {
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      const user = JSON.parse(storedUser)
+      userRole.value = user.admin_role ? 'Администратор' : 'Метролог'
+    }
+  } catch (error) {
+    console.error('Error loading user role:', error)
+  }
+}
+
+// Загрузка списка эталонов
+const loadReferenceDevices = async () => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  loading.value = true
+  try {
+    const url = filters.value.validityStatus === 'valid'
+      ? `${API_BASE_URL}/reference-devices/?valid_only=true`
+      : `${API_BASE_URL}/reference-devices/`
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('user')
+        router.push('/login')
+        return
+      }
+      throw new Error('Ошибка загрузки эталонов')
+    }
+
+    const data = await response.json()
+    tableData.value = data
+    console.log('Загружены эталоны:', data)
+  } catch (error) {
+    console.error('Error loading reference devices:', error)
+    errorMessage.value = error.message || 'Ошибка загрузки эталонов'
+    showErrorDialog.value = true
+  } finally {
+    loading.value = false
+  }
+}
 
 // Фильтрация данных
 const filteredData = computed(() => {
@@ -207,50 +332,71 @@ const filteredData = computed(() => {
     // Поиск по тексту
     const query = searchQuery.value.toLowerCase()
     const matchesSearch = query === '' || 
-      item.name.toLowerCase().includes(query) || 
-      item.serialNumber.toLowerCase().includes(query) ||
-      formatDate(item.validUntil).toLowerCase().includes(query)
+      item.serial_number?.toLowerCase().includes(query) ||
+      formatDate(item.date_admission).toLowerCase().includes(query) ||
+      formatDate(item.valid_for).toLowerCase().includes(query)
     
-    // Фильтр по статусу валидности
+    // Фильтр по статусу валидности (на клиенте)
     let matchesValidity = true
     if (filters.value.validityStatus === 'valid') {
-      matchesValidity = !isExpired(item.validUntil)
+      matchesValidity = !isExpired(item.valid_for)
     } else if (filters.value.validityStatus === 'expired') {
-      matchesValidity = isExpired(item.validUntil)
+      matchesValidity = isExpired(item.valid_for)
     }
     
-    // Фильтр по дате валидности
-    const matchesValidFrom = !filters.value.validFrom || item.validUntil >= filters.value.validFrom
-    const matchesValidTo = !filters.value.validTo || item.validUntil <= filters.value.validTo
+    // Фильтр по дате поступления
+    const matchesAdmissionFrom = !filters.value.admissionFrom || 
+      item.date_admission >= filters.value.admissionFrom
+    const matchesAdmissionTo = !filters.value.admissionTo || 
+      item.date_admission <= filters.value.admissionTo
     
-    return matchesSearch && matchesValidity && matchesValidFrom && matchesValidTo
+    // Фильтр по дате валидности
+    const matchesValidFrom = !filters.value.validFrom || 
+      item.valid_for >= filters.value.validFrom
+    const matchesValidTo = !filters.value.validTo || 
+      item.valid_for <= filters.value.validTo
+    
+    return matchesSearch && matchesValidity && 
+           matchesAdmissionFrom && matchesAdmissionTo &&
+           matchesValidFrom && matchesValidTo
   })
 })
 
 // Применить фильтры
 const applyFilters = () => {
   showFilters.value = false
+  if (filters.value.validityStatus !== 'all') {
+    loadReferenceDevices() // Перезагружаем с сервера с фильтром valid_only
+  }
 }
 
 // Сбросить фильтры
 const resetFilters = () => {
   filters.value = {
     validityStatus: 'all',
+    admissionFrom: '',
+    admissionTo: '',
     validFrom: '',
     validTo: ''
   }
+  loadReferenceDevices() // Перезагружаем все
 }
 
 // Проверка на просроченность
-const isExpired = (date) => {
-  if (!date) return false
-  return new Date(date) < new Date()
+const isExpired = (dateStr) => {
+  if (!dateStr) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const validDate = new Date(dateStr)
+  validDate.setHours(0, 0, 0, 0)
+  return validDate < today
 }
 
 // Форматирование даты
-const formatDate = (date) => {
-  if (!date) return '—'
-  return new Date(date).toLocaleDateString('ru-RU')
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('ru-RU')
 }
 
 // Модальное окно
@@ -258,27 +404,36 @@ const showModal = ref(false)
 const modalTitle = ref('Добавить эталонное средство')
 const editingId = ref(null)
 const modalForm = ref({
-  serialNumber: '',
-  name: '',
-  validUntil: ''
+  serial_number: '',
+  date_admission: '',
+  valid_for: ''
 })
 
 const openAddModal = () => {
   if (userRole.value !== 'Администратор') return
   modalTitle.value = 'Добавить эталонное средство'
   editingId.value = null
-  modalForm.value = { serialNumber: '', name: '', validUntil: '' }
+  modalForm.value = {
+    serial_number: '',
+    date_admission: '',
+    valid_for: ''
+  }
   showModal.value = true
 }
 
 const openEditModal = (item) => {
   if (userRole.value !== 'Администратор') {
-    alert('У вас нет прав для редактирования')
+    errorMessage.value = 'У вас нет прав для редактирования'
+    showErrorDialog.value = true
     return
   }
   modalTitle.value = 'Редактировать эталонное средство'
   editingId.value = item.id
-  modalForm.value = { ...item }
+  modalForm.value = {
+    serial_number: item.serial_number,
+    date_admission: item.date_admission,
+    valid_for: item.valid_for
+  }
   showModal.value = true
 }
 
@@ -286,24 +441,75 @@ const closeModal = () => {
   showModal.value = false
 }
 
-const saveItem = () => {
-  if (!modalForm.value.serialNumber || !modalForm.value.name || !modalForm.value.validUntil) {
-    alert('Заполните все поля')
+const saveItem = async () => {
+  if (!modalForm.value.serial_number || !modalForm.value.date_admission || !modalForm.value.valid_for) {
+    errorMessage.value = 'Заполните все поля'
+    showErrorDialog.value = true
     return
   }
 
-  if (editingId.value) {
-    if (userRole.value !== 'Администратор') return
-    const index = tableData.value.findIndex(item => item.id === editingId.value)
-    if (index !== -1) {
-      tableData.value[index] = { ...modalForm.value, id: editingId.value }
-    }
-  } else {
-    if (userRole.value !== 'Администратор') return
-    const newId = Math.max(...tableData.value.map(item => item.id)) + 1
-    tableData.value.push({ ...modalForm.value, id: newId })
+  // Проверка дат
+  if (new Date(modalForm.value.valid_for) <= new Date(modalForm.value.date_admission)) {
+    errorMessage.value = 'Дата окончания срока должна быть позже даты поступления'
+    showErrorDialog.value = true
+    return
   }
-  closeModal()
+
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  saving.value = true
+  try {
+    if (editingId.value) {
+      // Редактирование
+      const response = await fetch(`${API_BASE_URL}/reference-devices/${editingId.value}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(modalForm.value)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Ошибка при обновлении эталона')
+      }
+
+      successMessage.value = 'Эталон успешно обновлен'
+    } else {
+      // Добавление
+      const response = await fetch(`${API_BASE_URL}/reference-devices/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(modalForm.value)
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Ошибка при создании эталона')
+      }
+
+      successMessage.value = 'Эталон успешно создан'
+    }
+    
+    // Обновляем список
+    await loadReferenceDevices()
+    showSuccessDialog.value = true
+    closeModal()
+  } catch (error) {
+    console.error('Error saving reference device:', error)
+    errorMessage.value = error.message || 'Ошибка при сохранении эталона'
+    showErrorDialog.value = true
+  } finally {
+    saving.value = false
+  }
 }
 
 // Диалог удаления
@@ -312,7 +518,8 @@ const itemToDelete = ref(null)
 
 const confirmDelete = (item) => {
   if (userRole.value !== 'Администратор') {
-    alert('У вас нет прав для удаления')
+    errorMessage.value = 'У вас нет прав для удаления'
+    showErrorDialog.value = true
     return
   }
   itemToDelete.value = item
@@ -320,13 +527,53 @@ const confirmDelete = (item) => {
 }
 
 const deleteMessage = computed(() => {
-  return `Вы уверены, что хотите удалить эталонное средство "${itemToDelete.value?.name || ''}"?`
+  return `Вы уверены, что хотите удалить эталон "${itemToDelete.value?.serial_number || ''}"?`
 })
 
-const deleteItem = () => {
-  if (itemToDelete.value && userRole.value === 'Администратор') {
-    tableData.value = tableData.value.filter(item => item.id !== itemToDelete.value.id)
+const deleteItem = async () => {
+  if (!itemToDelete.value) return
+
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/reference-devices/${itemToDelete.value.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.detail || 'Ошибка при удалении эталона')
+    }
+
+    // Обновляем список
+    await loadReferenceDevices()
+    successMessage.value = 'Эталон успешно удален'
+    showSuccessDialog.value = true
+  } catch (error) {
+    console.error('Error deleting reference device:', error)
+    errorMessage.value = error.message || 'Ошибка при удалении эталона'
+    showErrorDialog.value = true
+  } finally {
+    showDeleteDialog.value = false
     itemToDelete.value = null
   }
 }
+
+// Инициализация при загрузке компонента
+onMounted(() => {
+  const token = localStorage.getItem('access_token')
+  if (!token) {
+    router.push('/login')
+    return
+  }
+  loadUserRole()
+  loadReferenceDevices()
+})
 </script>
