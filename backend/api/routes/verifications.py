@@ -4,6 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text, and_
 
+from models.result_verification import ResultVerification
+from models.verification_type import VerificationType
+
 from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.verification import Verification
 from models.user import User
@@ -162,6 +165,54 @@ def get_verification(
     
     return result_dict
 
+@router.put("/{verification_id}", response_model=VerificationRead)
+def update_verification(
+    verification_id: int,
+    verification_data: VerificationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Обновить данные поверки (частичное обновление)
+    Только для админа или метролога, создавшего поверку
+    """
+    # Получаем поверку
+    verification = db.query(Verification).filter(Verification.id == verification_id).first()
+    if not verification:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Поверка не найдена"
+        )
+    
+    # Проверяем права: админ или создатель (если есть id_metrologist)
+    if not current_user.admin_role:
+        if verification.id_metrologist and verification.id_metrologist != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав для редактирования этой поверки"
+            )
+    
+    # Проверяем, что поверка еще не завершена
+    if verification.real_date_verification is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Нельзя редактировать завершенную поверку"
+        )
+    
+    # Обновляем только переданные поля
+    update_data = verification_data.model_dump(exclude_unset=True)
+    
+    # Валидация полей (как в предыдущей версии)
+    # ... (та же валидация что и выше)
+    
+    # Обновляем поля
+    for field, value in update_data.items():
+        setattr(verification, field, value)
+    
+    db.commit()
+    db.refresh(verification)
+    
+    return verification
 
 @router.post("/", response_model=VerificationRead, status_code=status.HTTP_201_CREATED)
 def create_verification(
@@ -187,17 +238,17 @@ def create_verification(
         date_receipt=verification_data.date_receipt,
         id_instrument=verification_data.id_instrument,
         # Заполняем обязательные поля значениями по умолчанию
-        temperature=0,  # или другое значение по умолчанию
-        pressure=0,
-        wetness=0,
-        complete_electric_test=False,
-        complete_voltage_test=False,
-        complete_isolation_test=False,
-        id_result=6,  # например, "Не завершено"
-        real_date_verification=None,  # это поле может быть NULL
-        valid_until=None,  # это поле может быть NULL
-        id_type=1,  # значение по умолчанию
-        id_metrologist=1  # значение по умолчанию или current_user.id
+        # temperature=0,  # или другое значение по умолчанию
+        # pressure=0,
+        # wetness=0,
+        # complete_electric_test=False,
+        # complete_voltage_test=False,
+        # complete_isolation_test=False,
+        # id_result=6,  # например, "Не завершено"
+        # real_date_verification=None,  # это поле может быть NULL
+        # valid_until=None,  # это поле может быть NULL
+        # id_type=1,  # значение по умолчанию
+        # id_metrologist=6  # значение по умолчанию или current_user.id
     )
     
     db.add(db_verification)
