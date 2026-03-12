@@ -58,7 +58,7 @@ def test_create_result_empty_name(client, admin_headers):
     response = client.post("/results/", headers=admin_headers, json={
         "result_name": ""
     })
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_create_result_long_name(client, admin_headers):
@@ -67,7 +67,7 @@ def test_create_result_long_name(client, admin_headers):
     response = client.post("/results/", headers=admin_headers, json={
         "result_name": long_name
     })
-    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 def test_create_result_without_auth(client):

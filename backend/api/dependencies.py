@@ -8,15 +8,12 @@ from core.database import SessionLocal
 from core.config import settings
 from models.user import User
 
-# Схема аутентификации - ТОЧНО УКАЖИТЕ ПРАВИЛЬНЫЙ URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
-
 
 def get_db() -> Generator:
     """
     Зависимость для получения сессии базы данных
     """
-    print(f"⚠️ get_db called with engine: {SessionLocal.kw['bind'].url}")
     db = SessionLocal()
     try:
         yield db
@@ -31,8 +28,6 @@ async def get_current_user(
     """
     Получить текущего пользователя по JWT токену
     """
-    print(f"=== get_current_user called ===")
-    print(f"Token received: {token[:20] if token else 'None'}...")
     
     if not token:
         print("No token provided")
@@ -50,16 +45,13 @@ async def get_current_user(
     
     try:
         # Декодируем JWT токен
-        print(f"Decoding token with secret: {settings.SECRET_KEY[:5]}...")
         payload = jwt.decode(
             token, 
             settings.SECRET_KEY, 
             algorithms=[settings.ALGORITHM]
         )
-        print(f"Payload: {payload}")
         
         user_id = payload.get("sub")
-        print(f"User ID from token: {user_id}")
         
         if user_id is None:
             print("No user_id in payload")
@@ -75,7 +67,6 @@ async def get_current_user(
         print(f"User with id {user_id} not found in database")
         raise credentials_exception
     
-    print(f"User found: {user.login}, admin_role: {user.admin_role}")
     return user
 
 
