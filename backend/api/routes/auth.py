@@ -2,7 +2,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from jose import jwt
 
 from api.dependencies import get_db
@@ -89,51 +89,15 @@ def login(
     }
 
 
-# @router.post("/login/json", response_model=TokenResponse)
-# def login_json(
-#     login_data: UserLogin,
-#     db: Session = Depends(get_db)
-# ):
-#     """
-#     Вход в систему (с JSON телом вместо form-data)
-#     """
-#     # Ищем пользователя по логину
-#     user = db.query(User).filter(
-#         (User.login == login_data.login)
-#     ).first()
-    
-#     if not user:
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Неверный логин или пароль"
-#         )
-    
-#     if not verify_password(login_data.password, user.hashed_password):
-#         raise HTTPException(
-#             status_code=status.HTTP_401_UNAUTHORIZED,
-#             detail="Неверный логин или пароль"
-#         )
-    
-#     access_token = create_access_token(
-#         data={"sub": str(user.id), "login": user.login}
-#     )
-    
-#     return {
-#         "access_token": access_token,
-#         "token_type": "bearer",
-#         "user": user
-#     }
-
-
 def create_access_token(data: dict, expires_delta: timedelta = None):
     """Создание JWT токена"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 

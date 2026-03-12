@@ -16,6 +16,7 @@ def get_db() -> Generator:
     """
     Зависимость для получения сессии базы данных
     """
+    print(f"⚠️ get_db called with engine: {SessionLocal.kw['bind'].url}")
     db = SessionLocal()
     try:
         yield db

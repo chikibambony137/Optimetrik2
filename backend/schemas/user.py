@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 import re
 
 
@@ -18,13 +18,13 @@ class UserCreate(UserBase):
     password: str = Field(..., description="Пароль", min_length=6, max_length=100)
     admin_role: bool = Field(False, description="Роль администратора")
     
-    @validator('login')
+    @field_validator('login')
     def validate_login(cls, v):
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Логин может содержать только буквы, цифры и подчеркивание')
         return v
     
-    @validator('password')
+    @field_validator('password')
     def validate_password(cls, v):
         if len(v) < 6:
             raise ValueError('Пароль должен быть не менее 6 символов')
@@ -39,13 +39,13 @@ class UserRegister(BaseModel):
     login: str = Field(..., description="Логин", min_length=3, max_length=100)
     password: str = Field(..., description="Пароль", min_length=6, max_length=100)
     
-    @validator('login')
+    @field_validator('login')
     def validate_login(cls, v):
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Логин может содержать только буквы, цифры и подчеркивание')
         return v
     
-    @validator('password')
+    @field_validator('password')
     def validate_password(cls, v):
         if len(v) < 6:
             raise ValueError('Пароль должен быть не менее 6 символов')
@@ -65,7 +65,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = Field(None, description="Новый пароль", min_length=6, max_length=100)
     admin_role: Optional[bool] = Field(None, description="Роль администратора")
     
-    @validator('login')
+    @field_validator('login')
     def validate_login(cls, v):
         if v is not None and not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Логин может содержать только буквы, цифры и подчеркивание')
