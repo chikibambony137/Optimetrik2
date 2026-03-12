@@ -49,7 +49,7 @@
                   backgroundColor: userData.admin_role ? '#e3f2fd' : '#f5f5f5',
                   color: userData.admin_role ? '#1976d2' : '#666'
                 }">
-                  {{ userData.admin_role ? 'Администратор' : 'Пользователь' }}
+                  {{ userData.admin_role ? 'Администратор' : 'Метролог' }}
                 </span>
               </div>
             </div>
@@ -225,7 +225,7 @@ const userFullName = computed(() => {
   return parts.filter(p => p && p.trim()).join(' ').trim() || 'Не указано'
 })
 
-const userRole = computed(() => userData.value.admin_role ? 'Администратор' : 'Пользователь')
+const userRole = computed(() => userData.value.admin_role ? 'Администратор' : 'Метролог')
 
 // Форма изменения пароля
 const passwordForm = ref({
