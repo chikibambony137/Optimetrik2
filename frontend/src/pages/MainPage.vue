@@ -1,5 +1,5 @@
 <template>
-  <div style="display: flex; min-height: 100vh; background-color: #f5f5f5; margin: 0; padding: 0;">
+  <div style="display: flex; min-height: 100vh; background-color: #f5f5f5; margin: 0; padding: 0; color: black;">
     <!-- Левая боковая панель с черными границами -->
     <div style="width: 260px; border-right: 1px solid black; background-color: #f5f5f5; display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0;">
       

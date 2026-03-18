@@ -93,6 +93,7 @@ const handleConfirm = () => {
   min-width: 300px;
   max-width: 500px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  color: black;
 }
 
 .dialog-header {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; color: black;">
       <!-- Левая колонка - информация о пользователе -->
       <div style="background-color: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px;">
         <h4 style="font-size: 16px; margin: 0 0 15px 0; color: #333;">Личная информация</h4>
@@ -64,7 +64,7 @@
           <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
             <button 
               @click="refreshUserData"
-              style="padding: 8px 16px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
+              style="padding: 8px 16px; background-color: white; color: black; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
               :disabled="loading"
             >
               <span v-if="loading">⟳ Обновление...</span>
@@ -84,7 +84,7 @@
             <input 
               v-model="passwordForm.currentPassword" 
               :type="showCurrentPassword ? 'text' : 'password'"
-              style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+              style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: white; color: black;"
               :disabled="passwordLoading"
             >
             <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
@@ -103,7 +103,7 @@
             <input 
               v-model="passwordForm.newPassword" 
               :type="showNewPassword ? 'text' : 'password'"
-              style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+              style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: white; color: black;"
               :disabled="passwordLoading"
             >
             <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
@@ -122,7 +122,7 @@
             <input 
               v-model="passwordForm.confirmPassword" 
               :type="showConfirmPassword ? 'text' : 'password'"
-              style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+              style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background-color: white; color: black;"
               :disabled="passwordLoading"
             >
             <div style="display: flex; justify-content: flex-end; margin-top: 5px;">
@@ -140,7 +140,7 @@
             <button 
               type="button"
               @click="resetPasswordForm"
-              style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;"
+              style="padding: 10px 20px; background-color: white; color: black; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;"
               :disabled="passwordLoading"
             >
               Очистить

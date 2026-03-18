@@ -1,5 +1,5 @@
 <template>
-  <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+  <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; color: black;">
     <div style="border: 2px solid black; border-radius: 20px; padding: 40px; max-width: 450px; width: 100%; background-color: #f5f5f5;">
       <h1 style="text-align: center; margin-bottom: 30px;">Авторизация</h1>
       

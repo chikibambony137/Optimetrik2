@@ -1,16 +1,16 @@
 <template>
   <div>
     <!-- Заголовок и панель управления -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: black;">
       
-      <div style="display: flex; gap: 10px;">
+      <div style="display: flex; gap: 10px; color: black">
         <!-- Расширенная строка поиска -->
         <div style="display: flex; gap: 5px;">
           <input 
             type="text" 
             v-model="searchQuery" 
             placeholder="Поиск по серийному номеру..."
-            style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; width: 350px;"
+            style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; width: 350px; background-color: white;"
           >
         </div>
 

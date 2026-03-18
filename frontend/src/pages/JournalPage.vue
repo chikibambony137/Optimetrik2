@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Заголовок и панель управления -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; color: black;">
       
       <div style="display: flex; gap: 10px;">
         <!-- Расширенная строка поиска -->
@@ -10,14 +10,14 @@
             type="text" 
             v-model="searchQuery" 
             placeholder="Поиск по серийному номеру, типу или результату..."
-            style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; width: 350px;"
+            style="padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; width: 350px; background-color: white; color: black"
           >
         </div>
 
         <!-- Кнопка фильтра -->
         <button 
           @click="showFilters = !showFilters"
-          style="background-color: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
+          style="background-color: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; color: black"
         >
           <span>⚙️</span> Фильтр
         </button>
@@ -34,7 +34,7 @@
         <button 
           @click="loadVerifications"
           :disabled="loading"
-          style="background-color: white; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
+          style="background-color: white; color: black; border: 1px solid #e0e0e0; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;"
         >
           <span>🔄</span> {{ loading ? 'Загрузка...' : 'Обновить' }}
         </button>
@@ -96,7 +96,7 @@
       </div>
 
       <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button @click="resetFilters" style="padding: 6px 12px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 13px;">Сбросить фильтры</button>
+        <button @click="resetFilters" style="padding: 6px 12px; background-color: white; color: black; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 13px;">Сбросить фильтры</button>
         <button @click="applyFilters" style="padding: 6px 12px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">Применить</button>
       </div>
     </div>
@@ -228,7 +228,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button @click="closeAddModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
+          <button @click="closeAddModal" style="padding: 10px 20px; background-color: white; color: black; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
           <button @click="createVerification" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
             {{ saving ? 'Сохранение...' : 'Создать' }}
           </button>
@@ -342,7 +342,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-          <button @click="closeCompleteModal" style="padding: 10px 20px; background-color: white; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
+          <button @click="closeCompleteModal" style="padding: 10px 20px; background-color: white; color: black; border: 1px solid #e0e0e0; border-radius: 6px; cursor: pointer; font-size: 14px;">Отмена</button>
           <button @click="completeVerification" :disabled="saving" style="padding: 10px 20px; background-color: black; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
             {{ saving ? 'Сохранение...' : 'Завершить' }}
           </button>
