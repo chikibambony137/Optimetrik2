@@ -1,8 +1,15 @@
 stages:
-  - test
+  - build
 
-hello-world:
-  stage: test
+variables:
+  DOCKER_DRIVER: overlay2
+
+build-backend:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
   script:
-    - echo "Hello from CI/CD!"
-    - echo "Project name: $CI_PROJECT_NAME"
+    - cd backend
+    - docker build -t backend:$CI_COMMIT_SHA .
+    - docker images | grep my-backend
