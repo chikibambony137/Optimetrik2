@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # @property
     # def DATABASE_URL(self) -> str:
     #     return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
-    DATABASE_URL: str = os.getenv("DATABASE_URL")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:0053@localhost:5432/Optimetrik")
     
     # JWT
     SECRET_KEY: str = os.getenv("SECRET_KEY", "default-secret-key")
