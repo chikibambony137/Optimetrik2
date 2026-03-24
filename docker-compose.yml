@@ -56,7 +56,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./frontend/dist:/usr/share/nginx/html
+      - ./frontend/dist:/usr/share/nginx/html  # только для разработки (hot reload)
 
 volumes:
   postgres_data:

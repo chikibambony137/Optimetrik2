@@ -1,0 +1,8 @@
+stages:
+  - test
+
+hello-world:
+  stage: test
+  script:
+    - echo "Hello from CI/CD!"
+    - echo "Project name: $CI_PROJECT_NAME"
