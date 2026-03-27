@@ -1,15 +1,10 @@
 stages:
-  - build
+  - test
 
-variables:
-  DOCKER_DRIVER: overlay2
-
-build-backend:
-  stage: build
-  image: docker:latest
-  services:
-    - docker:dind
+show-vars:
+  stage: test
   script:
-    - cd backend
-    - docker build -t backend:$CI_COMMIT_SHA .
-    - docker images | grep my-backend
+    - 'echo "Commit SHA: $CI_COMMIT_SHA"'
+    - 'echo "Branch: $CI_COMMIT_BRANCH"'
+    - 'echo "Project: $CI_PROJECT_NAME"'
+    - 'echo "Pipeline ID: $CI_PIPELINE_ID"'
