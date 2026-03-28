@@ -8,7 +8,7 @@ on:
         branches: [ master ]
 
 jobs: 
-    cache:
+    test:
         runs-on: ubuntu-latest
  
         steps:
@@ -26,37 +26,21 @@ jobs:
                 path: frontend/node_modules
                 key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
 
-    test:
-        runs-on: ubuntu-latest
-        needs: cache
-
-        steps:
-          - uses: actions/checkout@v6
+          - name: install python requirements
+            run:
+                pip install -r backend/requirements.txt
 
           - name: pytest
             run: |
                 cd backend/
-                pip install pytest fastapi sqlalchemy httpx
                 pytest
         
-    backend:
-        runs-on: ubuntu-latest
-        needs: [ cache, test ]
-
-        steps:
-          - uses: actions/checkout@v6
           - name: build-backend
             run: |
                 cd backend/
                 docker build -t back:${{ github.sha }} .
                 docker images | grep back
           
-    frontend:
-        runs-on: ubuntu-latest
-        needs: cache
-
-        steps:
-          - uses: actions/checkout@v6
           - name: build-frontend
             run: |
                 cd frontend/
