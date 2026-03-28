@@ -27,8 +27,20 @@ jobs:
                 docker build -t back:${{ github.sha }} .
                 docker images | grep back
           
-          - name: Build frontend image
+          - name: build-frontend
             run: |
                 cd frontend
                 docker build -t front:${{ github.sha }} .
                 docker images | grep front
+
+          - name: cache pip requirements
+            uses: actions/cache@v5
+            with:
+                path: ~/.cache/pip
+                key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+
+          - name: Cache npm packages
+            uses: actions/cache@v3
+            with:
+                path: frontend/node_modules
+                key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
