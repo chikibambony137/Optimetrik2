@@ -8,18 +8,11 @@ on:
         branches: [ master ]
 
 jobs: 
-    test:
+    cache:
         runs-on: ubuntu-latest
  
         steps:
           - uses: actions/checkout@v6
-
-          - name: show vars
-            run: |
-                echo "Commit SHA: ${{ github.sha }}"
-                echo "Branch: ${{ github.ref_name }}"
-                echo "Repository: ${{ github.repository }}"
-                echo "Run ID: ${{ github.run_id }}"
 
           - name: cache pip requirements
             uses: actions/cache@v5
@@ -28,10 +21,22 @@ jobs:
                 key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
 
           - name: Cache npm packages
-            uses: actions/cache@v3
+            uses: actions/cache@v5
             with:
                 path: frontend/node_modules
                 key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+
+    backend:
+        runs-on: ubuntu-latest
+ 
+        steps:
+          - uses: actions/checkout@v6
+
+          - name: pytest
+            run: |
+                cd backend/
+                .\venv\Scripts\activate
+                pytest
         
           - name: build-backend
             run: |
@@ -39,8 +44,12 @@ jobs:
                 docker build -t back:${{ github.sha }} .
                 docker images | grep back
           
+    frontend:
+        runs-on: ubuntu-latest
+ 
+        steps:
           - name: build-frontend
             run: |
-                cd frontend
+                cd frontend/
                 docker build -t front:${{ github.sha }} .
                 docker images | grep front
