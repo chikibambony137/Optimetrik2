@@ -36,7 +36,7 @@ jobs:
           - name: pytest
             run: |
                 cd backend/
-                pip install pytest
+                pip install pytest fastapi sqlalchemy
                 pytest
         
     backend:
