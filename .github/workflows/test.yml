@@ -12,8 +12,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-          - name: check code
-            uses: actions/checkout@v6
+          - uses: actions/checkout@v6
 
           - name: show vars
             run: |
@@ -22,6 +21,14 @@ jobs:
                 echo "Repository: ${{ github.repository }}"
                 echo "Run ID: ${{ github.run_id }}"
         
-          - name: Hello from CI
-            run: echo "Hello from GitHub Actions!"
-
+          - name: build-backend
+            run: |
+                cd backend/
+                docker build -t back:${{ github.sha }} .
+                docker images | grep back
+          
+          - name: Build frontend image
+            run: |
+                cd frontend
+                docker build -t front:${{ github.sha }} .
+                docker images | grep front
