@@ -20,18 +20,6 @@ jobs:
                 echo "Branch: ${{ github.ref_name }}"
                 echo "Repository: ${{ github.repository }}"
                 echo "Run ID: ${{ github.run_id }}"
-        
-          - name: build-backend
-            run: |
-                cd backend/
-                docker build -t back:${{ github.sha }} .
-                docker images | grep back
-          
-          - name: build-frontend
-            run: |
-                cd frontend
-                docker build -t front:${{ github.sha }} .
-                docker images | grep front
 
           - name: cache pip requirements
             uses: actions/cache@v5
@@ -44,3 +32,15 @@ jobs:
             with:
                 path: frontend/node_modules
                 key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+        
+          - name: build-backend
+            run: |
+                cd backend/
+                docker build -t back:${{ github.sha }} .
+                docker images | grep back
+          
+          - name: build-frontend
+            run: |
+                cd frontend
+                docker build -t front:${{ github.sha }} .
+                docker images | grep front
