@@ -1,0 +1,27 @@
+name: Test Workflow
+
+on:
+    push:
+        branches:
+            - master
+    pull_request:
+        branches: [ master ]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: check code
+            uses: actions/checkout@v4
+
+          - name: show vars
+            run: |
+                echo "Commit SHA: ${{ github.sha }}"
+                echo "Branch: ${{ github.ref_name }}"
+                echo "Repository: ${{ github.repository }}"
+                echo "Run ID: ${{ github.run_id }}"
+        
+          - name: Hello from CI
+            run: echo "Hello from GitHub Actions!"
+
