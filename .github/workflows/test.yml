@@ -27,6 +27,10 @@ jobs:
                 path: frontend/node_modules
                 key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
 
+          - name: install python requirements
+            run:
+                pip install -r backend/requirements.txt
+
           - name: pytest
             run: |
                 cd backend/
