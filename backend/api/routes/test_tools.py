@@ -30,7 +30,7 @@ def get_test_tools(
     query = db.query(TestTool)
 
     if active_only:
-        query = query.filter(TestTool.active is True)
+        query = query.filter(TestTool.active)
 
     tools = query.offset(skip).limit(limit).all()
     return tools
@@ -44,7 +44,7 @@ def get_active_test_tools(
     """
     Получить только активные тестовые стенды
     """
-    tools = db.query(TestTool).filter(TestTool.active is True).all()
+    tools = db.query(TestTool).filter(TestTool.active).all()
     return tools
 
 

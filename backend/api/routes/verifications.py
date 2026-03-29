@@ -2,10 +2,7 @@ from typing import List, Optional
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text, and_
-
-from models.result_verification import ResultVerification
-from models.verification_type import VerificationType
+from sqlalchemy import text
 
 from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.verification import Verification
@@ -22,8 +19,7 @@ from schemas.verification import (
     VerificationTestData,
     VerificationComplete,
     VerificationDetailRead,
-    VerificationListRead,
-    VerificationWithRelations
+    VerificationListRead
 )
 
 router = APIRouter(prefix="/verifications", tags=["Поверки"])
@@ -301,7 +297,7 @@ def fill_test_data(
     for tool_id in test_data.id_test_tools:
         tool = db.query(TestTool).filter(
             TestTool.id == tool_id,
-            TestTool.active is True
+            TestTool.active
         ).first()
         if not tool:
             raise HTTPException(
@@ -399,9 +395,9 @@ def complete_verification(
 
     # Общий результат (успех если все тесты пройдены)
     # all_tests_passed = (
-    #     verification.complete_electric_test
-    #     and verification.complete_voltage_test
-    #     and verification.complete_isolation_test
+    #     verification.complete_electric_test and
+    #     verification.complete_voltage_test and
+    #     verification.complete_isolation_test
     # )
 
     verification.real_date_verification = today
