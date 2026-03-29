@@ -2,7 +2,10 @@ from typing import List, Optional
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, and_
+
+from models.result_verification import ResultVerification
+from models.verification_type import VerificationType
 
 from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.verification import Verification
@@ -19,7 +22,8 @@ from schemas.verification import (
     VerificationTestData,
     VerificationComplete,
     VerificationDetailRead,
-    VerificationListRead
+    VerificationListRead,
+    VerificationWithRelations
 )
 
 router = APIRouter(prefix="/verifications", tags=["Поверки"])
@@ -65,7 +69,7 @@ def get_verifications(
             LIMIT :limit OFFSET :skip
         """.format(
             completed_filter="AND v.\"Real_Date_Verification\" IS NOT NULL" if completed is True else
-            "AND v.\"Real_Date_Verification\" IS NULL" if completed is False else "",
+                             "AND v.\"Real_Date_Verification\" IS NULL" if completed is False else "",
             date_filter="AND v.\"Planned_Date_Verification\" BETWEEN :from_date AND :to_date" if from_date and to_date else "",
             instrument_filter="AND v.\"ID_Instrument\" = :instrument_id" if instrument_id else "",
             metrologist_filter="AND v.\"ID_Metrologist\" = :metrologist_id" if metrologist_id else ""
