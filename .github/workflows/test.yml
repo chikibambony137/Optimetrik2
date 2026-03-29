@@ -35,6 +35,11 @@ jobs:
             run: |
                 cd backend/
                 pytest
+
+          - name: flake8 lint
+            run: |
+                cd backend/
+                flake8 .
         
           - name: build-backend
             run: |
