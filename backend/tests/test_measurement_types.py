@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 
 
@@ -41,7 +40,7 @@ def test_get_measurement_type_by_id(client, auth_headers, test_measurement_type)
 
 def test_update_measurement_type(client, admin_headers, test_measurement_type):
     """Тест обновления типа"""
-    response = client.put(f"/measurement-types/{test_measurement_type.id}", 
+    response = client.put(f"/measurement-types/{test_measurement_type.id}",
                           headers=admin_headers, json={
         "name_company": "Обновленная компания"
     })
@@ -52,6 +51,6 @@ def test_update_measurement_type(client, admin_headers, test_measurement_type):
 
 def test_delete_measurement_type(client, admin_headers, test_measurement_type):
     """Тест удаления типа"""
-    response = client.delete(f"/measurement-types/{test_measurement_type.id}", 
-                            headers=admin_headers)
+    response = client.delete(f"/measurement-types/{test_measurement_type.id}",
+                             headers=admin_headers)
     assert response.status_code == status.HTTP_204_NO_CONTENT

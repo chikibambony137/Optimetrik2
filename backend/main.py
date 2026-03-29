@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from api.routes import *
+from api.routes import auth, users, verifications, test_tools, reference_devices, measurement_instruments, measurement_types, results, verification_types
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.database import get_db

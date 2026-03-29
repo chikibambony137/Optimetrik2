@@ -53,16 +53,16 @@ def create_result(
     existing = db.query(ResultVerification).filter(
         ResultVerification.result_name == result_data.result_name
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Результат с таким названием уже существует"
         )
-    
+
     db_result = ResultVerification(result_name=result_data.result_name)
     db.add(db_result)
     db.commit()
     db.refresh(db_result)
-    
+
     return db_result

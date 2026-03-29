@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from models.user import User
@@ -57,22 +57,22 @@ def create_measurement_type(
         MeasurementType.name_company == type_data.name_company,
         MeasurementType.batch_number == type_data.batch_number
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Тип с такой компанией и номером партии уже существует"
         )
-    
+
     db_type = MeasurementType(
         name_company=type_data.name_company,
         batch_number=type_data.batch_number
     )
-    
+
     db.add(db_type)
     db.commit()
     db.refresh(db_type)
-    
+
     return db_type
 
 
@@ -92,36 +92,36 @@ def update_measurement_type(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тип не найден"
         )
-    
+
     # Подготовка данных для обновления
     update_data = type_data.model_dump(exclude_unset=True)
-    
+
     # Проверка на уникальность, если меняются поля
     if "name_company" in update_data or "batch_number" in update_data:
         # Берем новые значения или оставляем старые
         new_name = update_data.get("name_company", type_obj.name_company)
         new_batch = update_data.get("batch_number", type_obj.batch_number)
-        
+
         # Проверяем, существует ли другой тип с такими же значениями
         existing = db.query(MeasurementType).filter(
             MeasurementType.name_company == new_name,
             MeasurementType.batch_number == new_batch,
             MeasurementType.id != type_id
         ).first()
-        
+
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Тип с такой компанией и номером партии уже существует"
             )
-    
+
     # Обновляем поля
     for field, value in update_data.items():
         setattr(type_obj, field, value)
-    
+
     db.commit()
     db.refresh(type_obj)
-    
+
     return type_obj
 
 
@@ -140,17 +140,17 @@ def delete_measurement_type(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тип не найден"
         )
-    
+
     # Проверка на связанные средства измерения
     if type_obj.instruments:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя удалить тип, к которому привязаны средства измерения"
         )
-    
+
     db.delete(type_obj)
     db.commit()
-    
+
     return None
 
 
@@ -169,9 +169,9 @@ def get_instruments_by_type(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тип не найден"
         )
-    
+
     instruments = db.query(MeasurementInstrument).filter(
         MeasurementInstrument.id_type_instrument == type_id
     ).all()
-    
+
     return instruments

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -7,8 +7,8 @@ from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.test_tool import TestTool
 from models.user import User
 from schemas.test_tool import (
-    TestToolRead, 
-    TestToolCreate, 
+    TestToolRead,
+    TestToolCreate,
     TestToolUpdate
 )
 
@@ -28,10 +28,10 @@ def get_test_tools(
     Можно фильтровать только активные
     """
     query = db.query(TestTool)
-    
+
     if active_only:
-        query = query.filter(TestTool.active == True)
-    
+        query = query.filter(TestTool.active is True)
+
     tools = query.offset(skip).limit(limit).all()
     return tools
 
@@ -44,7 +44,7 @@ def get_active_test_tools(
     """
     Получить только активные тестовые стенды
     """
-    tools = db.query(TestTool).filter(TestTool.active == True).all()
+    tools = db.query(TestTool).filter(TestTool.active is True).all()
     return tools
 
 
@@ -79,22 +79,22 @@ def create_test_tool(
     existing = db.query(TestTool).filter(
         TestTool.serial_number == tool_data.serial_number
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Тестовый стенд с таким серийным номером уже существует"
         )
-    
+
     db_tool = TestTool(
         serial_number=tool_data.serial_number,
         active=tool_data.active
     )
-    
+
     db.add(db_tool)
     db.commit()
     db.refresh(db_tool)
-    
+
     return db_tool
 
 
@@ -114,26 +114,26 @@ def update_test_tool(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тестовый стенд не найден"
         )
-    
+
     # Проверка серийного номера на уникальность, если меняется
     if tool_data.serial_number and tool_data.serial_number != tool.serial_number:
         existing = db.query(TestTool).filter(
             TestTool.serial_number == tool_data.serial_number
         ).first()
-        
+
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Тестовый стенд с таким серийным номером уже существует"
             )
-    
+
     update_data = tool_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(tool, field, value)
-    
+
     db.commit()
     db.refresh(tool)
-    
+
     return tool
 
 
@@ -152,17 +152,17 @@ def delete_test_tool(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тестовый стенд не найден"
         )
-    
+
     # Проверка на связанные TestToolVerification
     if tool.test_tool_verifications:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя удалить стенд, который использовался в поверках"
         )
-    
+
     db.delete(tool)
     db.commit()
-    
+
     return None
 
 
@@ -181,11 +181,11 @@ def toggle_test_tool_active(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тестовый стенд не найден"
         )
-    
+
     tool.active = not tool.active
     db.commit()
     db.refresh(tool)
-    
+
     return tool
 
 
@@ -204,10 +204,10 @@ def get_tool_verifications(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тестовый стенд не найден"
         )
-    
+
     result = db.execute(
         text("""
-            SELECT 
+            SELECT
                 v."ID",
                 v."Real_Date_Verification",
                 i."Serial_Number" as instrument_serial,
@@ -225,7 +225,7 @@ def get_tool_verifications(
         """),
         {"tool_id": tool_id}
     ).fetchall()
-    
+
     return [dict(row._mapping) for row in result]
 
 
@@ -244,13 +244,13 @@ def get_tool_stats(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Тестовый стенд не найден"
         )
-    
+
     # Общее количество использований
     total = db.execute(
         text("SELECT COUNT(*) FROM \"Test_Tool_Verification\" WHERE \"ID_Test_Tool\" = :tool_id"),
         {"tool_id": tool_id}
     ).scalar()
-    
+
     # Последнее использование
     last = db.execute(
         text("""
@@ -263,7 +263,7 @@ def get_tool_stats(
         """),
         {"tool_id": tool_id}
     ).scalar()
-    
+
     return {
         "tool_id": tool_id,
         "serial_number": tool.serial_number,

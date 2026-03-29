@@ -2,10 +2,7 @@ from typing import List, Optional
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import text, and_
-
-from models.result_verification import ResultVerification
-from models.verification_type import VerificationType
+from sqlalchemy import text
 
 from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.verification import Verification
@@ -22,8 +19,7 @@ from schemas.verification import (
     VerificationTestData,
     VerificationComplete,
     VerificationDetailRead,
-    VerificationListRead,
-    VerificationWithRelations
+    VerificationListRead
 )
 
 router = APIRouter(prefix="/verifications", tags=["Поверки"])
@@ -46,7 +42,7 @@ def get_verifications(
     """
     query = db.execute(
         text("""
-            SELECT 
+            SELECT
                 v."ID" as id,
                 v."Planned_Date_Verification" as planned_date_verification,
                 v."Real_Date_Verification" as real_date_verification,
@@ -68,8 +64,8 @@ def get_verifications(
             ORDER BY v."Planned_Date_Verification" DESC
             LIMIT :limit OFFSET :skip
         """.format(
-            completed_filter="AND v.\"Real_Date_Verification\" IS NOT NULL" if completed is True else 
-                           "AND v.\"Real_Date_Verification\" IS NULL" if completed is False else "",
+            completed_filter="AND v.\"Real_Date_Verification\" IS NOT NULL" if completed is True else
+            "AND v.\"Real_Date_Verification\" IS NULL" if completed is False else "",
             date_filter="AND v.\"Planned_Date_Verification\" BETWEEN :from_date AND :to_date" if from_date and to_date else "",
             instrument_filter="AND v.\"ID_Instrument\" = :instrument_id" if instrument_id else "",
             metrologist_filter="AND v.\"ID_Metrologist\" = :metrologist_id" if metrologist_id else ""
@@ -83,7 +79,7 @@ def get_verifications(
             "metrologist_id": metrologist_id
         }
     ).fetchall()
-    
+
     return [dict(row._mapping) for row in query]
 
 
@@ -103,11 +99,11 @@ def get_verification(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Поверка не найдена"
         )
-    
+
     # Получаем расширенную информацию через SQL
     result = db.execute(
         text("""
-            SELECT 
+            SELECT
                 v."ID" as id,
                 v."Planned_Date_Verification" as planned_date_verification,
                 v."Date_Receipt" as date_receipt,
@@ -136,7 +132,7 @@ def get_verification(
         """),
         {"vid": verification_id}
     ).first()
-    
+
     # Получаем использованные стенды
     test_tools = db.execute(
         text("""
@@ -147,7 +143,7 @@ def get_verification(
         """),
         {"vid": verification_id}
     ).fetchall()
-    
+
     # Получаем использованные эталоны
     reference_devices = db.execute(
         text("""
@@ -158,12 +154,13 @@ def get_verification(
         """),
         {"vid": verification_id}
     ).fetchall()
-    
+
     result_dict = dict(result._mapping)
     result_dict["test_tools"] = [dict(tb._mapping) for tb in test_tools]
     result_dict["reference_devices"] = [dict(rd._mapping) for rd in reference_devices]
-    
+
     return result_dict
+
 
 @router.put("/{verification_id}", response_model=VerificationRead)
 def update_verification(
@@ -183,7 +180,7 @@ def update_verification(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Поверка не найдена"
         )
-    
+
     # Проверяем права: админ или создатель (если есть id_metrologist)
     if not current_user.admin_role:
         if verification.id_metrologist and verification.id_metrologist != current_user.id:
@@ -191,28 +188,29 @@ def update_verification(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Недостаточно прав для редактирования этой поверки"
             )
-    
+
     # Проверяем, что поверка еще не завершена
     if verification.real_date_verification is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя редактировать завершенную поверку"
         )
-    
+
     # Обновляем только переданные поля
     update_data = verification_data.model_dump(exclude_unset=True)
-    
+
     # Валидация полей (как в предыдущей версии)
     # ... (та же валидация что и выше)
-    
+
     # Обновляем поля
     for field, value in update_data.items():
         setattr(verification, field, value)
-    
+
     db.commit()
     db.refresh(verification)
-    
+
     return verification
+
 
 @router.post("/", response_model=VerificationRead, status_code=status.HTTP_201_CREATED)
 def create_verification(
@@ -232,7 +230,7 @@ def create_verification(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Средство измерения не найдено"
         )
-    
+
     db_verification = Verification(
         planned_date_verification=verification_data.planned_date_verification,
         date_receipt=verification_data.date_receipt,
@@ -250,12 +248,13 @@ def create_verification(
         # id_type=1,  # значение по умолчанию
         # id_metrologist=6  # значение по умолчанию или current_user.id
     )
-    
+
     db.add(db_verification)
     db.commit()
     db.refresh(db_verification)
-    
+
     return db_verification
+
 
 @router.put("/{verification_id}/test-data", response_model=VerificationRead)
 def fill_test_data(
@@ -273,14 +272,14 @@ def fill_test_data(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Поверка не найдена"
         )
-    
+
     # Проверяем, что поверка еще не завершена
     if verification.real_date_verification is not None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя изменить завершенную поверку"
         )
-    
+
     # Проверяем валидность эталонов на текущую дату
     today = date.today()
     for ref_id in test_data.id_reference_devices:
@@ -293,19 +292,19 @@ def fill_test_data(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Эталон с ID {ref_id} не валиден на текущую дату"
             )
-    
+
     # Проверяем активность стендов
     for tool_id in test_data.id_test_tools:
         tool = db.query(TestTool).filter(
             TestTool.id == tool_id,
-            TestTool.active == True
+            TestTool.active is True
         ).first()
         if not tool:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Стенд с ID {tool_id} не активен"
             )
-    
+
     # Обновляем данные поверки
     verification.temperature = test_data.temperature
     verification.pressure = test_data.pressure
@@ -313,9 +312,9 @@ def fill_test_data(
     verification.complete_electric_test = test_data.complete_electric_test
     verification.complete_voltage_test = test_data.complete_voltage_test
     verification.complete_isolation_test = test_data.complete_isolation_test
-    
+
     db.commit()
-    
+
     # Добавляем связи со стендами
     for tool_id in test_data.id_test_tools:
         ttv = TestToolVerification(
@@ -323,7 +322,7 @@ def fill_test_data(
             id_test_tool=tool_id
         )
         db.add(ttv)
-    
+
     # Добавляем связи с эталонами
     for ref_id in test_data.id_reference_devices:
         ti = TestingInstrument(
@@ -331,10 +330,10 @@ def fill_test_data(
             id_reference_instrument=ref_id
         )
         db.add(ti)
-    
+
     db.commit()
     db.refresh(verification)
-    
+
     return verification
 
 
@@ -354,7 +353,7 @@ def complete_verification(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Поверка не найдена"
         )
-    
+
     # Проверяем, что все тестовые данные заполнены
     if None in [
         verification.temperature,
@@ -368,7 +367,7 @@ def complete_verification(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Не все тестовые данные заполнены"
         )
-    
+
     # Проверяем, что есть хотя бы один эталон и стенд
     has_refs = db.query(TestingInstrument).filter(
         TestingInstrument.id_verification == verification_id
@@ -376,40 +375,40 @@ def complete_verification(
     has_tools = db.query(TestToolVerification).filter(
         TestToolVerification.id_verification == verification_id
     ).first()
-    
+
     if not has_refs or not has_tools:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Должны быть указаны эталоны и стенды"
         )
-    
+
     # Рассчитываем даты
     today = date.today()
-    
+
     # Срок действия в зависимости от типа поверки
     if complete_data.id_type == 1:  # Первичная (8 лет - 1 день)
-        valid_until = today + timedelta(days=8*365 - 1)
+        valid_until = today + timedelta(days=8 * 365 - 1)
     elif complete_data.id_type == 2:  # Периодическая (4 года - 1 день)
-        valid_until = today + timedelta(days=4*365 - 1)
+        valid_until = today + timedelta(days=4 * 365 - 1)
     else:  # Другие типы (по умолчанию 1 год)
         valid_until = today + timedelta(days=365)
-    
+
     # Общий результат (успех если все тесты пройдены)
-    all_tests_passed = (
-        verification.complete_electric_test and
-        verification.complete_voltage_test and
-        verification.complete_isolation_test
-    )
-    
+    # all_tests_passed = (
+    #     verification.complete_electric_test
+    #     and verification.complete_voltage_test
+    #     and verification.complete_isolation_test
+    # )
+
     verification.real_date_verification = today
     verification.valid_until = valid_until
     verification.id_type = complete_data.id_type
     verification.id_result = complete_data.id_result
     verification.id_metrologist = current_user.id
-    
+
     db.commit()
     db.refresh(verification)
-    
+
     return verification
 
 
@@ -428,7 +427,7 @@ def delete_verification(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Поверка не найдена"
         )
-    
+
     # Удаляем связанные записи
     db.execute(
         text("DELETE FROM \"Testing_Instrument\" WHERE \"ID_Verification\" = :vid"),
@@ -438,10 +437,10 @@ def delete_verification(
         text("DELETE FROM \"Test_Tool_Verification\" WHERE \"ID_Verification\" = :vid"),
         {"vid": verification_id}
     )
-    
+
     db.delete(verification)
     db.commit()
-    
+
     return None
 
 
@@ -456,10 +455,10 @@ def get_verification_stats(
     """
     if not year:
         year = date.today().year
-    
+
     result = db.execute(
         text("""
-            SELECT 
+            SELECT
                 COUNT(*) as total,
                 COUNT(CASE WHEN "Real_Date_Verification" IS NOT NULL THEN 1 END) as completed,
                 COUNT(CASE WHEN "Real_Date_Verification" IS NULL THEN 1 END) as pending,
@@ -470,5 +469,5 @@ def get_verification_stats(
         """),
         {"year": year}
     ).first()
-    
+
     return dict(result._mapping)

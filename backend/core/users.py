@@ -1,6 +1,6 @@
-from typing import Optional, Union
+from typing import Optional
 from fastapi import Depends, Request
-from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin, models
+from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin
 from fastapi_users.authentication import (
     AuthenticationBackend,
     BearerTransport,
@@ -8,10 +8,7 @@ from fastapi_users.authentication import (
     CookieTransport
 )
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
-import uuid
-from datetime import timedelta
 
 from core.config import settings
 from core.database import SessionLocal
@@ -69,15 +66,15 @@ def get_user_db():
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = settings.SECRET_KEY
     verification_token_secret = settings.SECRET_KEY
-    
+
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} ({user.email}) has registered.")
-    
+
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ):
         print(f"User {user.id} forgot password. Token: {token}")
-    
+
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
     ):
@@ -94,7 +91,6 @@ fastapi_users = FastAPIUsers[User, int](
     get_user_manager,
     [auth_backend],
 )
-
 
 # Текущий пользователь (dependency)
 current_user = fastapi_users.current_user(active=True)

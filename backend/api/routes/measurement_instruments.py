@@ -2,15 +2,14 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from datetime import date
 from models.user import User
 
 from api.dependencies import get_db, get_current_user, get_current_admin_user
 from models.measurement_instrument import MeasurementInstrument
 from models.measurement_type import MeasurementType
 from schemas.measurement_instrument import (
-    MeasurementInstrumentRead, 
-    MeasurementInstrumentCreate, 
+    MeasurementInstrumentRead,
+    MeasurementInstrumentCreate,
     MeasurementInstrumentUpdate
 )
 
@@ -30,10 +29,10 @@ def get_instruments(
     Можно фильтровать по типу
     """
     query = db.query(MeasurementInstrument)
-    
+
     if type_id:
         query = query.filter(MeasurementInstrument.id_type_instrument == type_id)
-    
+
     instruments = query.offset(skip).limit(limit).all()
     return instruments
 
@@ -50,7 +49,7 @@ def get_instrument(
     instrument = db.query(MeasurementInstrument).filter(
         MeasurementInstrument.id == instrument_id
     ).first()
-    
+
     if not instrument:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -72,34 +71,34 @@ def create_instrument(
     existing = db.query(MeasurementInstrument).filter(
         MeasurementInstrument.serial_number == instrument_data.serial_number
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Средство измерения с таким серийным номером уже существует"
         )
-    
+
     # Проверка существования типа
     type_obj = db.query(MeasurementType).filter(
         MeasurementType.id == instrument_data.id_type_instrument
     ).first()
-    
+
     if not type_obj:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Указанный тип не существует"
         )
-    
+
     db_instrument = MeasurementInstrument(
         serial_number=instrument_data.serial_number,
         date_admission=instrument_data.date_admission,
         id_type_instrument=instrument_data.id_type_instrument
     )
-    
+
     db.add(db_instrument)
     db.commit()
     db.refresh(db_instrument)
-    
+
     return db_instrument
 
 
@@ -116,44 +115,44 @@ def update_instrument(
     instrument = db.query(MeasurementInstrument).filter(
         MeasurementInstrument.id == instrument_id
     ).first()
-    
+
     if not instrument:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Средство измерения не найдено"
         )
-    
+
     # Проверка серийного номера на уникальность, если меняется
     if instrument_data.serial_number and instrument_data.serial_number != instrument.serial_number:
         existing = db.query(MeasurementInstrument).filter(
             MeasurementInstrument.serial_number == instrument_data.serial_number
         ).first()
-        
+
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Средство измерения с таким серийным номером уже существует"
             )
-    
+
     # Проверка типа, если меняется
     if instrument_data.id_type_instrument:
         type_obj = db.query(MeasurementType).filter(
             MeasurementType.id == instrument_data.id_type_instrument
         ).first()
-        
+
         if not type_obj:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Указанный тип не существует"
             )
-    
+
     update_data = instrument_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(instrument, field, value)
-    
+
     db.commit()
     db.refresh(instrument)
-    
+
     return instrument
 
 
@@ -169,23 +168,23 @@ def delete_instrument(
     instrument = db.query(MeasurementInstrument).filter(
         MeasurementInstrument.id == instrument_id
     ).first()
-    
+
     if not instrument:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Средство измерения не найдено"
         )
-    
+
     # Проверка на связанные поверки
     if instrument.verifications:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя удалить средство измерения, у которого есть поверки"
         )
-    
+
     db.delete(instrument)
     db.commit()
-    
+
     return None
 
 
@@ -201,17 +200,17 @@ def get_instrument_verifications(
     instrument = db.query(MeasurementInstrument).filter(
         MeasurementInstrument.id == instrument_id
     ).first()
-    
+
     if not instrument:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Средство измерения не найдено"
         )
-    
+
     # Используем прямой SQL для сложного запроса
     result = db.execute(
         text("""
-        SELECT 
+        SELECT
             v."ID",
             v."Real_Date_Verification",
             v."Valid_Until",
@@ -227,5 +226,5 @@ def get_instrument_verifications(
         """),
         {"instrument_id": instrument_id}
     ).fetchall()
-    
+
     return [dict(row._mapping) for row in result]

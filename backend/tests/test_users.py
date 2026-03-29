@@ -1,6 +1,4 @@
-import pytest
 from fastapi import status
-from core.security import verify_password
 
 
 def test_get_current_user(client, auth_headers, test_user):
@@ -137,7 +135,7 @@ def test_delete_user_as_admin(client, admin_headers, test_user):
     """Тест удаления пользователя администратором"""
     response = client.delete(f"/users/{test_user.id}", headers=admin_headers)
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    
+
     # Проверяем, что пользователь действительно удален
     get_response = client.get(f"/users/{test_user.id}", headers=admin_headers)
     assert get_response.status_code == status.HTTP_404_NOT_FOUND
@@ -170,7 +168,7 @@ def test_change_password_success(client, auth_headers, test_user):
     })
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["message"] == "Пароль успешно изменен"
-    
+
     # Проверяем, что новый пароль работает
     from core.security import verify_password
     db_user = test_user  # тестовый пользователь из фикстуры

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
@@ -24,10 +24,10 @@ async def get_current_user_info(
     """
     # Логируем для отладки
     auth_header = request.headers.get("authorization")
-    print(f"=== /users/me called ===")
+    print("=== /users/me called ===")
     print(f"Auth header: {auth_header}")
     print(f"Current user: {current_user.login if current_user else 'None'}")
-    
+
     return current_user
 
 
@@ -79,7 +79,7 @@ async def create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Пользователь с таким логином уже существует"
         )
-    
+
     # Создание пользователя
     db_user = User(
         surname=user_data.surname,
@@ -89,11 +89,11 @@ async def create_user(
         hashed_password=get_password_hash(user_data.password),
         login=user_data.login,
     )
-    
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    
+
     return db_user
 
 
@@ -113,7 +113,7 @@ async def update_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Пользователь не найден"
         )
-    
+
     # Проверка логина на уникальность
     if user_data.login and user_data.login != user.login:
         existing = db.query(User).filter(User.login == user_data.login).first()
@@ -122,20 +122,20 @@ async def update_user(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Пользователь с таким логином уже существует"
             )
-    
+
     # Обновление полей
     update_data = user_data.model_dump(exclude_unset=True)
-    
+
     # Если есть пароль - хешируем
     if "password" in update_data:
         update_data["hashed_password"] = get_password_hash(update_data.pop("password"))
-    
+
     for field, value in update_data.items():
         setattr(user, field, value)
-    
+
     db.commit()
     db.refresh(user)
-    
+
     return user
 
 
@@ -154,17 +154,17 @@ async def delete_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Пользователь не найден"
         )
-    
+
     # Нельзя удалить самого себя
     if user.id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Нельзя удалить свою учетную запись"
         )
-    
+
     db.delete(user)
     db.commit()
-    
+
     return None
 
 
@@ -183,7 +183,7 @@ async def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Неверный текущий пароль"
         )
-    
+
     # Проверяем сложность нового пароля
     new_password = password_data['new_password']
     if len(new_password) < 6:
@@ -191,9 +191,9 @@ async def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Пароль должен содержать минимум 6 символов"
         )
-    
+
     # Хешируем и сохраняем новый пароль
     current_user.hashed_password = get_password_hash(new_password)
     db.commit()
-    
+
     return {"message": "Пароль успешно изменен"}

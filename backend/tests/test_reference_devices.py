@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 from datetime import date, timedelta
 
@@ -36,7 +35,7 @@ def test_create_reference_device(client, admin_headers):
     """Тест создания эталона администратором"""
     today = date.today()
     valid_until = today + timedelta(days=365)
-    
+
     response = client.post("/reference-devices/", headers=admin_headers, json={
         "serial_number": "REF-NEW-001",
         "date_admission": str(today),
@@ -53,7 +52,7 @@ def test_create_reference_device_unauthorized(client, auth_headers):
     """Тест создания эталона обычным пользователем (должен быть 403)"""
     today = date.today()
     valid_until = today + timedelta(days=365)
-    
+
     response = client.post("/reference-devices/", headers=auth_headers, json={
         "serial_number": "REF-UNAUTH-001",
         "date_admission": str(today),
@@ -66,7 +65,7 @@ def test_create_reference_device_duplicate_serial(client, admin_headers, test_re
     """Тест создания эталона с дубликатом серийного номера"""
     today = date.today()
     valid_until = today + timedelta(days=365)
-    
+
     response = client.post("/reference-devices/", headers=admin_headers, json={
         "serial_number": test_reference_device.serial_number,
         "date_admission": str(today),
@@ -79,8 +78,8 @@ def test_create_reference_device_duplicate_serial(client, admin_headers, test_re
 def test_update_reference_device(client, admin_headers, test_reference_device):
     """Тест обновления эталона"""
     new_valid_until = date.today() + timedelta(days=730)  # +2 года
-    
-    response = client.put(f"/reference-devices/{test_reference_device.id}", 
+
+    response = client.put(f"/reference-devices/{test_reference_device.id}",
                           headers=admin_headers, json={
         "valid_for": str(new_valid_until)
     })
@@ -91,7 +90,7 @@ def test_update_reference_device(client, admin_headers, test_reference_device):
 
 def test_update_reference_device_unauthorized(client, auth_headers, test_reference_device):
     """Тест обновления эталона обычным пользователем (должен быть 403)"""
-    response = client.put(f"/reference-devices/{test_reference_device.id}", 
+    response = client.put(f"/reference-devices/{test_reference_device.id}",
                           headers=auth_headers, json={
         "serial_number": "NEW-SERIAL"
     })
@@ -108,10 +107,10 @@ def test_update_reference_device_not_found(client, admin_headers):
 
 def test_delete_reference_device(client, admin_headers, test_reference_device):
     """Тест удаления эталона"""
-    response = client.delete(f"/reference-devices/{test_reference_device.id}", 
-                            headers=admin_headers)
+    response = client.delete(f"/reference-devices/{test_reference_device.id}",
+                             headers=admin_headers)
     assert response.status_code == status.HTTP_204_NO_CONTENT
-    
+
     # Проверяем, что эталон действительно удален
     get_response = client.get(f"/reference-devices/{test_reference_device.id}", headers=admin_headers)
     assert get_response.status_code == status.HTTP_404_NOT_FOUND
@@ -119,8 +118,8 @@ def test_delete_reference_device(client, admin_headers, test_reference_device):
 
 def test_delete_reference_device_unauthorized(client, auth_headers, test_reference_device):
     """Тест удаления эталона обычным пользователем (должен быть 403)"""
-    response = client.delete(f"/reference-devices/{test_reference_device.id}", 
-                            headers=auth_headers)
+    response = client.delete(f"/reference-devices/{test_reference_device.id}",
+                             headers=auth_headers)
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 

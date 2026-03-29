@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import date, datetime
+from datetime import date
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from decimal import Decimal
 
@@ -89,7 +89,7 @@ class VerificationRead(BaseModel):
     id_type: Optional[int] = Field(None, description="ID типа поверки")
     id_metrologist: Optional[int] = Field(None, description="ID метролога")
     id_instrument: int = Field(..., description="ID средства измерения")
-    
+
     # Вычисляемые поля
     is_completed: bool = Field(False, description="Завершена ли поверка")
     is_success: Optional[bool] = Field(None, description="Успешна ли поверка")

@@ -1,5 +1,4 @@
-from typing import Any
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta, datetime, timezone
@@ -9,7 +8,7 @@ from api.dependencies import get_db
 from core.config import settings
 from core.security import get_password_hash, verify_password
 from models.user import User
-from schemas.user import UserRegister, UserResponse, UserLogin, TokenResponse
+from schemas.user import UserRegister, UserResponse, TokenResponse
 
 router = APIRouter(prefix="/auth", tags=["Аутентификация"])
 
@@ -29,7 +28,7 @@ def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Пользователь с таким логином уже существует"
         )
-    
+
     # Создаем нового пользователя
     # По умолчанию обычный пользователь (не админ)
     db_user = User(
@@ -40,11 +39,11 @@ def register(
         hashed_password=get_password_hash(user_data.password),
         admin_role=False,  # обычный пользователь
     )
-    
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    
+
     return db_user
 
 
@@ -60,14 +59,14 @@ def login(
     user = db.query(User).filter(
         (User.login == form_data.username)
     ).first()
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный логин или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Проверяем пароль
     if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -75,13 +74,12 @@ def login(
             detail="Неверный логин или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    
+
     # Создаем JWT токен
     access_token = create_access_token(
         data={"sub": str(user.id), "login": user.login}
     )
-    
+
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -96,7 +94,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -112,8 +110,8 @@ def verify_token(
     """
     try:
         payload = jwt.decode(
-            token, 
-            settings.SECRET_KEY, 
+            token,
+            settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM]
         )
         user_id = payload.get("sub")
@@ -127,12 +125,12 @@ def verify_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невалидный токен"
         )
-    
+
     user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Пользователь не найден"
         )
-    
+
     return user

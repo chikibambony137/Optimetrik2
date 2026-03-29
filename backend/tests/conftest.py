@@ -7,14 +7,14 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from main import app
-from core.database import Base, get_db
+from core.database import Base
 from core.security import get_password_hash
 from models.user import User
 from models.measurement_type import MeasurementType
 from models.measurement_instrument import MeasurementInstrument
 from models.reference_device import ReferenceDevice
 from models.test_tool import TestTool
-from models.verification import Verification
+# from models.verification import Verification
 from models.result_verification import ResultVerification
 from models.verification_type import VerificationType
 
@@ -50,10 +50,10 @@ def client(db_session):
             yield db_session
         finally:
             pass
-    
+
     import api.dependencies
     app.dependency_overrides[api.dependencies.get_db] = override_get_db
-    
+
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -62,21 +62,21 @@ def client(db_session):
 def test_user(db_session):
     """Создает тестового пользователя"""
     from core.security import get_password_hash, verify_password
-    
+
     # Очищаем всех тестовых пользователей перед созданием нового
     db_session.query(User).filter(User.login.like("testuser%")).delete()
     db_session.commit()
-    
+
     # Создаем нового с уникальным логином
     import uuid
     unique_login = f"testuser_{uuid.uuid4().hex[:8]}"
-    
+
     password = "Test123"
     hashed = get_password_hash(password)
-    
+
     # Проверяем, что хеш работает
     assert verify_password(password, hashed), "Хеширование не работает!"
-    
+
     user = User(
         surname="Тестов",
         name="Тест",
@@ -88,7 +88,7 @@ def test_user(db_session):
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
-    
+
     return user
 
 
@@ -117,10 +117,10 @@ def auth_headers(client, test_user):
         "username": test_user.login,
         "password": "Test123"
     })
-    
+
     # Если не получилось, выводим подробную информацию
     if response.status_code != 200:
-        
+
         # Проверим, существует ли пользователь в БД
         from models.user import User
         db = TestingSessionLocal()
@@ -131,17 +131,17 @@ def auth_headers(client, test_user):
         else:
             print("Пользователь НЕ НАЙДЕН в БД!")
         db.close()
-        
+
         pytest.skip(f"Login failed: {response.text}")
-    
+
     response_data = response.json()
-    
+
     # Проверяем наличие токена
     if "access_token" not in response_data:
         print(f"\n!!! Нет access_token в ответе: {response_data}")
         print(f"Ключи ответа: {response_data.keys()}")
         pytest.skip("No access_token in response")
-    
+
     token = response_data["access_token"]
     return {"Authorization": f"Bearer {token}"}
 

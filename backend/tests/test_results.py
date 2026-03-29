@@ -1,4 +1,3 @@
-import pytest
 from fastapi import status
 
 
@@ -95,7 +94,7 @@ def test_create_multiple_results(client, admin_headers):
     """Тест создания нескольких результатов подряд"""
     names = ["Результат 1", "Результат 2", "Результат 3"]
     created_ids = []
-    
+
     for name in names:
         response = client.post("/results/", headers=admin_headers, json={
             "result_name": name
@@ -104,7 +103,7 @@ def test_create_multiple_results(client, admin_headers):
         data = response.json()
         assert data["result_name"] == name
         created_ids.append(data["id"])
-    
+
     # Проверяем, что все ID разные
     assert len(set(created_ids)) == len(names)
 
@@ -117,7 +116,7 @@ def test_created_results_are_retrievable(client, admin_headers):
     })
     assert create_response.status_code == status.HTTP_201_CREATED
     result_id = create_response.json()["id"]
-    
+
     # Получаем его по ID
     get_response = client.get(f"/results/{result_id}", headers=admin_headers)
     assert get_response.status_code == status.HTTP_200_OK
@@ -130,14 +129,14 @@ def test_results_list_includes_created(client, admin_headers):
     # Получаем текущий список
     initial_response = client.get("/results/", headers=admin_headers)
     initial_count = len(initial_response.json())
-    
+
     # Создаем новый результат
     client.post("/results/", headers=admin_headers, json={
         "result_name": "Результат для проверки списка"
     })
-    
+
     # Получаем обновленный список
     new_response = client.get("/results/", headers=admin_headers)
     new_count = len(new_response.json())
-    
+
     assert new_count == initial_count + 1

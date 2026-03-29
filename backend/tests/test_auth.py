@@ -1,12 +1,12 @@
-import pytest
 from fastapi import status
 import uuid
+
 
 def test_register_user(client):
     """Тест регистрации нового пользователя"""
     # Генерируем уникальный логин для каждого теста
     unique_login = f"newuser_{uuid.uuid4().hex[:8]}"
-    
+
     user_data = {
         "surname": "Новый",
         "name": "Пользователь",
@@ -14,9 +14,9 @@ def test_register_user(client):
         "login": unique_login,
         "password": "NewPass123"
     }
-    
+
     response = client.post("/auth/register", json=user_data)
-    
+
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
     assert data["login"] == unique_login
@@ -36,16 +36,16 @@ def test_register_duplicate_login(client, test_user):
 
 def test_login_success(client, test_user):
     """Тест успешного входа"""
-    
-    # Проверим пароль напрямую
-    from core.security import verify_password
-    is_valid = verify_password("Test123", test_user.hashed_password)
-    
+
+    # # Проверим пароль напрямую
+    # from core.security import verify_password
+    # is_valid = verify_password("Test123", test_user.hashed_password)
+
     response = client.post("/auth/login", data={
         "username": test_user.login,
         "password": "Test123"
     })
-    
+
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert "access_token" in data

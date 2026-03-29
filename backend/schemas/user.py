@@ -9,7 +9,7 @@ class UserBase(BaseModel):
     name: str = Field(..., description="Имя", min_length=1, max_length=100)
     patronymic: Optional[str] = Field(None, description="Отчество", max_length=100)
     login: str = Field(..., description="Логин", min_length=3, max_length=100)
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -17,13 +17,13 @@ class UserCreate(UserBase):
     """Схема для создания пользователя администратором"""
     password: str = Field(..., description="Пароль", min_length=6, max_length=100)
     admin_role: bool = Field(False, description="Роль администратора")
-    
+
     @field_validator('login')
     def validate_login(cls, v):
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Логин может содержать только буквы, цифры и подчеркивание')
         return v
-    
+
     @field_validator('password')
     def validate_password(cls, v):
         if len(v) < 6:
@@ -38,13 +38,13 @@ class UserRegister(BaseModel):
     patronymic: Optional[str] = Field(None, description="Отчество", max_length=100)
     login: str = Field(..., description="Логин", min_length=3, max_length=100)
     password: str = Field(..., description="Пароль", min_length=6, max_length=100)
-    
+
     @field_validator('login')
     def validate_login(cls, v):
         if not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Логин может содержать только буквы, цифры и подчеркивание')
         return v
-    
+
     @field_validator('password')
     def validate_password(cls, v):
         if len(v) < 6:
@@ -64,13 +64,13 @@ class UserUpdate(BaseModel):
     login: Optional[str] = Field(None, description="Логин", min_length=3, max_length=100)
     password: Optional[str] = Field(None, description="Новый пароль", min_length=6, max_length=100)
     admin_role: Optional[bool] = Field(None, description="Роль администратора")
-    
+
     @field_validator('login')
     def validate_login(cls, v):
         if v is not None and not re.match(r'^[a-zA-Z0-9_]+$', v):
             raise ValueError('Логин может содержать только буквы, цифры и подчеркивание')
         return v
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -88,7 +88,7 @@ class UserRead(BaseModel):
     patronymic: Optional[str] = None
     login: str
     admin_role: bool = False
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -100,7 +100,7 @@ class UserResponse(BaseModel):
     patronymic: Optional[str] = None
     login: str
     admin_role: bool = False
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -53,16 +53,16 @@ def create_verification_type(
     existing = db.query(VerificationType).filter(
         VerificationType.type_name == type_data.type_name
     ).first()
-    
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Тип поверки с таким названием уже существует"
         )
-    
+
     db_type = VerificationType(type_name=type_data.type_name)
     db.add(db_type)
     db.commit()
     db.refresh(db_type)
-    
+
     return db_type

@@ -10,6 +10,7 @@ from models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
+
 def get_db() -> Generator:
     """
     Зависимость для получения сессии базы данных
@@ -28,7 +29,7 @@ async def get_current_user(
     """
     Получить текущего пользователя по JWT токену
     """
-    
+
     if not token:
         print("No token provided")
         raise HTTPException(
@@ -36,37 +37,37 @@ async def get_current_user(
             detail="Не предоставлен токен авторизации",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Не удалось подтвердить учетные данные",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         # Декодируем JWT токен
         payload = jwt.decode(
-            token, 
-            settings.SECRET_KEY, 
+            token,
+            settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM]
         )
-        
+
         user_id = payload.get("sub")
-        
+
         if user_id is None:
             print("No user_id in payload")
             raise credentials_exception
-            
+
     except JWTError as e:
         print(f"JWT Error: {e}")
         raise credentials_exception
-    
+
     # Получаем пользователя из БД
     user = db.query(User).filter(User.id == int(user_id)).first()
     if user is None:
         print(f"User with id {user_id} not found in database")
         raise credentials_exception
-    
+
     return user
 
 
@@ -82,7 +83,7 @@ async def get_current_admin_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Недостаточно прав. Требуются права администратора"
         )
-    
+
     return current_user
 
 
@@ -95,17 +96,17 @@ async def get_current_user_optional(
     """
     if not token:
         return None
-    
+
     try:
         payload = jwt.decode(
-            token, 
-            settings.SECRET_KEY, 
+            token,
+            settings.SECRET_KEY,
             algorithms=[settings.ALGORITHM]
         )
         user_id = payload.get("sub")
         if user_id is None:
             return None
-        
+
         user = db.query(User).filter(User.id == int(user_id)).first()
         return user
     except JWTError:
