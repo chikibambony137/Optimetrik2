@@ -17,7 +17,7 @@ jobs:
           - name: flake8 lint
             run: |
                 cd backend/
-                pip install flake8
+                pip install flake8==7.3.0
                 flake8 .
 
     test:
