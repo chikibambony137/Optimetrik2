@@ -7,10 +7,22 @@ on:
     pull_request:
         branches: [ master ]
 
-jobs: 
+jobs:
+    lint:
+        runs-on: ubuntu-latest
+
+        steps:
+          - uses: actions/checkout@v6
+
+          - name: flake8 lint
+            run: |
+                cd backend/
+                pip install flake8
+                flake8 .
+
     test:
         runs-on: ubuntu-latest
- 
+
         steps:
           - uses: actions/checkout@v6
 
@@ -31,22 +43,28 @@ jobs:
             run:
                 pip install -r backend/requirements.txt
 
+          - name: install npm packages
+            run:
+                npm install
+
           - name: pytest
             run: |
                 cd backend/
                 pytest
 
-          - name: flake8 lint
-            run: |
-                cd backend/
-                flake8 .
-        
+
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+          - uses: actions/checkount@v6
+
           - name: build-backend
             run: |
                 cd backend/
                 docker build -t back:${{ github.sha }} .
                 docker images | grep back
-          
+
           - name: build-frontend
             run: |
                 cd frontend/
