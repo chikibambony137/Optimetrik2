@@ -44,7 +44,7 @@ jobs:
                 pip install -r backend/requirements.txt
 
           - name: install npm packages
-            run:
+            run: |
                 cd frontend/
                 npm install
 
