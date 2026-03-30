@@ -2,7 +2,7 @@
 FROM node:24 AS build-stage
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --legacy-peer-deps --include=dev 
+RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npm run build
 
