@@ -1,9 +1,14 @@
 import js from "@eslint/js";
 import globals from "globals";
 import pluginVue from "eslint-plugin-vue";
+import vueParser from "vue-eslint-parser";
 import { defineConfig } from "eslint/config";
+import prettierConfig from "eslint-config-prettier";
 
 export default defineConfig([
+
+  prettierConfig, // отключает правила, которые конфликтуют с Prettier
+
   // 1. Игнорируемые файлы (аналог .eslintignore)
   {
     ignores: [
@@ -27,6 +32,13 @@ export default defineConfig([
         ...globals.browser,
         ...globals.node,
         ...globals.es2021
+      },
+      // ВАЖНО: указываем парсер для Vue файлов
+      parser: vueParser,
+      parserOptions: {
+        parser: js,  // используем импортированный модуль
+        sourceType: "module",
+        ecmaVersion: "latest"
       }
     },
     plugins: {
