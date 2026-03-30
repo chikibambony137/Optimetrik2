@@ -20,6 +20,12 @@ jobs:
                 pip install flake8==7.3.0
                 flake8 .
 
+          - name: eslint
+            run: |
+                cd frontend/
+                npm install --save-dev eslint@9 @eslint/js globals eslint-plugin-vue vue-eslint-parser
+                npm run lint
+
     test:
         runs-on: ubuntu-latest
         needs: lint
