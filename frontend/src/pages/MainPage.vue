@@ -62,11 +62,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
-const router = useRouter()
-const route = useRoute()
+const router = useRouter();
+const route = useRoute();
 
 const userData = ref({
   id: null,
@@ -75,49 +75,49 @@ const userData = ref({
   name: '',
   patronymic: '',
   admin_role: false
-})
+});
 
 // Данные пользователя (в реальном проекте получать из БД/стора)
 const loadUserData = () => {
   try {
     // Пробуем получить данные из localStorage
-    const storedUser = localStorage.getItem('user')
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      userData.value = JSON.parse(storedUser)
+      userData.value = JSON.parse(storedUser);
     } else {
       // Если данных нет, пробуем получить через токен
-      refreshUserData()
+      // refreshUserData();
     }
-  } catch (error) {
-    console.error('Error loading user data:', error)
-    errorMessage.value = 'Ошибка загрузки данных пользователя'
-    showErrorDialog.value = true
+  } catch {
+    // console.error('Error loading user data:', error);
+    // errorMessage.value = 'Ошибка загрузки данных пользователя';
+    // showErrorDialog.value = true;
   }
-}
+};
 
 onMounted(() => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
-  loadUserData()
-})
+  loadUserData();
+});
 
 // Вычисляем инициалы
 const userInitials = computed(() => {
-  return (userData.value.surname.charAt(0) + userData.value.name.charAt(0)).toUpperCase()
-})
+  return (userData.value.surname.charAt(0) + userData.value.name.charAt(0)).toUpperCase();
+});
 
 // Вычисляем полное ФИО
 const userFullName = computed(() => {
-  return `${userData.value.surname} ${userData.value.name} ${userData.value.patronymic}`
-})
+  return `${userData.value.surname} ${userData.value.name} ${userData.value.patronymic}`;
+});
 
 // Вычисляем роль
 const userRole = computed(() => {
-  return userData.value.admin_role ? 'Администратор' : 'Метролог'
-})
+  return userData.value.admin_role ? 'Администратор' : 'Метролог';
+});
 
 // Все пункты меню
 const allMenuItems = ref([
@@ -126,30 +126,30 @@ const allMenuItems = ref([
   { id: 3, name: 'Тестовый стенд', route: 'test-tool', roles: ['Администратор', 'Метролог'] },
   { id: 4, name: 'Профиль', route: 'profile', roles: ['Администратор', 'Метролог'] },
   { id: 5, name: 'Пользователи', route: 'users', roles: ['Администратор'] } // Только для админа
-])
+]);
 
 // Фильтруем пункты меню по роли пользователя
 const filteredMenuItems = computed(() => {
   return allMenuItems.value.filter(item => 
     item.roles.includes(userData.value.admin_role ? 'Администратор' : 'Метролог')
-  )
-})
+  );
+});
 
 // Проверяем активный роут
 const isActiveRoute = (routeName) => {
-  return route.name === routeName
-}
+  return route.name === routeName;
+};
 
 // Навигация
 const navigateTo = (routeName) => {
-  router.push({ name: routeName })
-}
+  router.push({ name: routeName });
+};
 
 // Название текущей страницы
 const currentPageTitle = computed(() => {
-  const currentRoute = allMenuItems.value.find(item => item.route === route.name)
-  return currentRoute ? currentRoute.name : 'Журнал поверок'
-})
+  const currentRoute = allMenuItems.value.find(item => item.route === route.name);
+  return currentRoute ? currentRoute.name : 'Журнал поверок';
+});
 </script>
 
 <style>

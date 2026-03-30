@@ -129,7 +129,7 @@
         v-model:show="showSuccessDialog"
         title="Регистрация"
         message="Регистрация прошла успешно! Теперь вы можете войти в систему."
-        confirmText="Войти"
+        confirm-text="Войти"
         @confirm="goToLogin"
       />
 
@@ -138,7 +138,7 @@
         v-model:show="showErrorDialog"
         title="Ошибка регистрации"
         :message="errorMessage"
-        confirmText="Понятно"
+        confirm-text="Понятно"
         @confirm="showErrorDialog = false"
       />
     </div>
@@ -146,67 +146,67 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '../components/blocks/Dialog.vue'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '../components/blocks/Dialog.vue';
 
-const router = useRouter()
+const router = useRouter();
 
 // Поля формы
-const surname = ref('')
-const name = ref('')
-const patronymic = ref('')
-const login = ref('')
-const password = ref('')
-const confirmPassword = ref('')
+const surname = ref('');
+const name = ref('');
+const patronymic = ref('');
+const login = ref('');
+const password = ref('');
+const confirmPassword = ref('');
 
 // Состояния
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-const loading = ref(false)
-const showSuccessDialog = ref(false)
-const showErrorDialog = ref(false)
-const errorMessage = ref('')
+const showPassword = ref(false);
+const showConfirmPassword = ref(false);
+const loading = ref(false);
+const showSuccessDialog = ref(false);
+const showErrorDialog = ref(false);
+const errorMessage = ref('');
 
 // Валидация пароля
 const validatePassword = (pass) => {
-  if (pass.length < 6) return false
-  if (!/[A-Z]/.test(pass)) return false
-  if (!/[0-9]/.test(pass)) return false
-  return true
-}
+  if (pass.length < 6) return false;
+  if (!/[A-Z]/.test(pass)) return false;
+  if (!/[0-9]/.test(pass)) return false;
+  return true;
+};
 
 // Обработка регистрации
-const handleRegister = async () => {
+const handleRegister = async() => {
   // Проверка заполнения обязательных полей
   if (!surname.value || !name.value || !login.value || !password.value) {
-    errorMessage.value = 'Заполните все обязательные поля'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Заполните все обязательные поля';
+    showErrorDialog.value = true;
+    return;
   }
 
   // Проверка совпадения паролей
   if (password.value !== confirmPassword.value) {
-    errorMessage.value = 'Пароли не совпадают'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Пароли не совпадают';
+    showErrorDialog.value = true;
+    return;
   }
   
   // Проверка сложности пароля
   if (!validatePassword(password.value)) {
-    errorMessage.value = 'Пароль должен содержать минимум 6 символов, хотя бы одну заглавную букву и одну цифру'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Пароль должен содержать минимум 6 символов, хотя бы одну заглавную букву и одну цифру';
+    showErrorDialog.value = true;
+    return;
   }
   
-  loading.value = true
+  loading.value = true;
 
   try {
     // Отправка данных на бэкенд
     const response = await fetch('http://localhost:8000/auth/register', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         login: login.value,
@@ -216,31 +216,31 @@ const handleRegister = async () => {
         admin_role: false, // По умолчанию все новые пользователи - метрологи
         password: password.value
       })
-    })
+    });
 
-    const data = await response.json()
+    const data = await response.json();
 
     if (!response.ok) {
       // Обработка ошибок от сервера
       if (response.status === 400 && data.detail === 'Пользователь с таким логином уже существует') {
-        throw new Error('Пользователь с таким логином уже существует')
+        throw new Error('Пользователь с таким логином уже существует');
       }
-      throw new Error(data.detail || 'Ошибка регистрации')
+      throw new Error(data.detail || 'Ошибка регистрации');
     }
 
     // Успешная регистрация
-    showSuccessDialog.value = true
+    showSuccessDialog.value = true;
 
   } catch (error) {
-    console.error('Registration error:', error)
-    errorMessage.value = error.message
-    showErrorDialog.value = true
+    // console.error('Registration error:', error);
+    errorMessage.value = error.message;
+    showErrorDialog.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const goToLogin = () => {
-  router.push('/login')
-}
+  router.push('/login');
+};
 </script>

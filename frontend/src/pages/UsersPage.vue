@@ -150,22 +150,34 @@
 
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Фамилия</label>
-          <input v-model="modalForm.surname" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Введите фамилию">
+          <input v-model="modalForm.surname"
+                 type="text"
+                 style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+                 placeholder="Введите фамилию">
         </div>
 
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Имя</label>
-          <input v-model="modalForm.name" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Введите имя">
+          <input v-model="modalForm.name"
+                 type="text"
+                 style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+                 placeholder="Введите имя">
         </div>
 
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Отчество</label>
-          <input v-model="modalForm.patronymic" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Введите отчество (необязательно)">
+          <input v-model="modalForm.patronymic"
+                 type="text"
+                 style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+                 placeholder="Введите отчество (необязательно)">
         </div>
 
         <div style="margin-bottom: 15px;">
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Логин</label>
-          <input v-model="modalForm.login" type="text" style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;" placeholder="Введите логин">
+          <input v-model="modalForm.login"
+                 type="text"
+                 style="width: 100%; padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px;"
+                 placeholder="Введите логин">
         </div>
 
         <div style="margin-bottom: 15px;">
@@ -209,7 +221,7 @@
       v-model:show="showDeleteDialog"
       title="Подтверждение удаления"
       :message="deleteMessage"
-      confirmText="Удалить"
+      confirm-text="Удалить"
       @confirm="deleteItem"
     />
 
@@ -218,7 +230,7 @@
       v-model:show="showErrorDialog"
       title="Ошибка"
       :message="errorMessage"
-      confirmText="Понятно"
+      confirm-text="Понятно"
       @confirm="showErrorDialog = false"
     />
 
@@ -227,136 +239,136 @@
       v-model:show="showSuccessDialog"
       title="Успешно"
       :message="successMessage"
-      confirmText="ОК"
+      confirm-text="ОК"
       @confirm="showSuccessDialog = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '../components/blocks/Dialog.vue'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '../components/blocks/Dialog.vue';
 
-const router = useRouter()
-const API_BASE_URL = 'http://localhost:8000'
+const router = useRouter();
+const API_BASE_URL = 'http://localhost:8000';
 
 // ID текущего пользователя (получаем из localStorage)
-const currentUserId = ref(null)
+const currentUserId = ref(null);
 
 // Состояние загрузки
-const loading = ref(false)
-const saving = ref(false)
+const loading = ref(false);
+const saving = ref(false);
 
 // Состояние для поиска и фильтров
-const searchQuery = ref('')
-const showFilters = ref(false)
+const searchQuery = ref('');
+const showFilters = ref(false);
 const filters = ref({
   role: 'all'
-})
+});
 
 // Диалоги
-const showErrorDialog = ref(false)
-const showSuccessDialog = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+const showErrorDialog = ref(false);
+const showSuccessDialog = ref(false);
+const errorMessage = ref('');
+const successMessage = ref('');
 
 // Показ пароля в модальном окне
-const showPassword = ref(false)
+const showPassword = ref(false);
 
 // Данные пользователей
-const tableData = ref([])
+const tableData = ref([]);
 
 // Загрузка списка пользователей с бэкенда
-const loadUsers = async () => {
-  const token = localStorage.getItem('access_token')
+const loadUsers = async() => {
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
     const response = await fetch(`${API_BASE_URL}/users/`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('user')
-        router.push('/login')
-        return
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+        return;
       }
-      throw new Error('Ошибка загрузки пользователей')
+      throw new Error('Ошибка загрузки пользователей');
     }
 
-    const data = await response.json()
-    tableData.value = data
-    console.log('Загружены пользователи:', data)
+    const data = await response.json();
+    tableData.value = data;
+    // console.log('Загружены пользователи:', data);
   } catch (error) {
-    console.error('Error loading users:', error)
-    errorMessage.value = error.message || 'Ошибка загрузки пользователей'
-    showErrorDialog.value = true
+    // console.error('Error loading users:', error);
+    errorMessage.value = error.message || 'Ошибка загрузки пользователей';
+    showErrorDialog.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Получение ID текущего пользователя
 const loadCurrentUserId = () => {
   try {
-    const storedUser = localStorage.getItem('user')
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const user = JSON.parse(storedUser)
-      currentUserId.value = user.id
+      const user = JSON.parse(storedUser);
+      currentUserId.value = user.id;
     }
-  } catch (error) {
-    console.error('Error loading current user:', error)
+  } catch {
+    // console.error('Error loading current user:', error);
   }
-}
+};
 
 // Фильтрация данных
 const filteredData = computed(() => {
   return tableData.value.filter(item => {
     // Поиск по тексту
-    const query = searchQuery.value.toLowerCase()
-    const role = item.admin_role ? 'Администратор' : 'Метролог'
+    const query = searchQuery.value.toLowerCase();
+    const role = item.admin_role ? 'Администратор' : 'Метролог';
     
     const matchesSearch = query === '' || 
       item.login?.toLowerCase().includes(query) ||
       item.surname?.toLowerCase().includes(query) || 
       item.name?.toLowerCase().includes(query) ||
       (item.patronymic && item.patronymic.toLowerCase().includes(query)) ||
-      role.toLowerCase().includes(query)
+      role.toLowerCase().includes(query);
     
     // Фильтр по роли
     const matchesRole = filters.value.role === 'all' || 
       (filters.value.role === 'Администратор' && item.admin_role) ||
-      (filters.value.role === 'Метролог' && !item.admin_role)
+      (filters.value.role === 'Метролог' && !item.admin_role);
     
-    return matchesSearch && matchesRole
-  })
-})
+    return matchesSearch && matchesRole;
+  });
+});
 
 // Применить фильтры
 const applyFilters = () => {
-  showFilters.value = false
-}
+  showFilters.value = false;
+};
 
 // Сбросить фильтры
 const resetFilters = () => {
   filters.value = {
     role: 'all'
-  }
-}
+  };
+};
 
 // Модальное окно
-const showModal = ref(false)
-const modalTitle = ref('Добавить пользователя')
-const editingId = ref(null)
+const showModal = ref(false);
+const modalTitle = ref('Добавить пользователя');
+const editingId = ref(null);
 const modalForm = ref({
   login: '',
   surname: '',
@@ -364,11 +376,11 @@ const modalForm = ref({
   patronymic: '',
   admin_role: false,
   password: ''
-})
+});
 
 const openAddModal = () => {
-  modalTitle.value = 'Добавить пользователя'
-  editingId.value = null
+  modalTitle.value = 'Добавить пользователя';
+  editingId.value = null;
   modalForm.value = {
     surname: '',
     name: '',
@@ -376,14 +388,14 @@ const openAddModal = () => {
     login: '',
     password: '',
     admin_role: false
-  }
-  showPassword.value = false
-  showModal.value = true
-}
+  };
+  showPassword.value = false;
+  showModal.value = true;
+};
 
 const openEditModal = (item) => {
-  modalTitle.value = 'Редактировать пользователя'
-  editingId.value = item.id
+  modalTitle.value = 'Редактировать пользователя';
+  editingId.value = item.id;
   modalForm.value = { 
     login: item.login,
     surname: item.surname,
@@ -391,37 +403,37 @@ const openEditModal = (item) => {
     patronymic: item.patronymic || '',
     admin_role: item.admin_role,
     password: '' // Пароль не показываем при редактировании
-  }
-  showPassword.value = false
-  showModal.value = true
-}
+  };
+  showPassword.value = false;
+  showModal.value = true;
+};
 
 const closeModal = () => {
-  showModal.value = false
-  showPassword.value = false
-}
+  showModal.value = false;
+  showPassword.value = false;
+};
 
-const saveItem = async () => {
+const saveItem = async() => {
   // Валидация
   if (!modalForm.value.login || !modalForm.value.surname || !modalForm.value.name) {
-    errorMessage.value = 'Заполните все обязательные поля'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Заполните все обязательные поля';
+    showErrorDialog.value = true;
+    return;
   }
 
   if (!editingId.value && !modalForm.value.password) {
-    errorMessage.value = 'Введите пароль для нового пользователя'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Введите пароль для нового пользователя';
+    showErrorDialog.value = true;
+    return;
   }
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  saving.value = true
+  saving.value = true;
   try {
     // Подготавливаем данные для отправки - исключаем пустые поля
     const dataToSend = {
@@ -430,14 +442,14 @@ const saveItem = async () => {
       name: modalForm.value.name,
       patronymic: modalForm.value.patronymic || null,
       admin_role: modalForm.value.admin_role
-    }
+    };
     
     // Добавляем пароль только если он не пустой
     if (modalForm.value.password && modalForm.value.password.trim() !== '') {
-      dataToSend.password = modalForm.value.password
+      dataToSend.password = modalForm.value.password;
     }
     
-    console.log('Отправляемые данные:', dataToSend) // Для отладки
+    // console.log('Отправляемые данные:', dataToSend); // Для отладки
 
     if (editingId.value) {
       // Редактирование
@@ -448,15 +460,15 @@ const saveItem = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(dataToSend)
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        console.error('Ошибка ответа:', error)
-        throw new Error(error.detail || 'Ошибка при обновлении пользователя')
+        const error = await response.json();
+        // console.error('Ошибка ответа:', error);
+        throw new Error(error.detail || 'Ошибка при обновлении пользователя');
       }
 
-      successMessage.value = 'Пользователь успешно обновлен'
+      successMessage.value = 'Пользователь успешно обновлен';
     } else {
       // Добавление
       const response = await fetch(`${API_BASE_URL}/users/`, {
@@ -466,50 +478,50 @@ const saveItem = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(dataToSend)
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Ошибка при создании пользователя')
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при создании пользователя');
       }
 
-      successMessage.value = 'Пользователь успешно создан'
+      successMessage.value = 'Пользователь успешно создан';
     }
     
     // Обновляем список пользователей
-    await loadUsers()
-    showSuccessDialog.value = true
-    closeModal()
+    await loadUsers();
+    showSuccessDialog.value = true;
+    closeModal();
   } catch (error) {
-    console.error('Error saving user:', error)
-    errorMessage.value = error.message || 'Ошибка при сохранении пользователя'
-    showErrorDialog.value = true
+    // console.error('Error saving user:', error);
+    errorMessage.value = error.message || 'Ошибка при сохранении пользователя';
+    showErrorDialog.value = true;
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 // Диалог удаления
-const showDeleteDialog = ref(false)
-const itemToDelete = ref(null)
+const showDeleteDialog = ref(false);
+const itemToDelete = ref(null);
 
 const confirmDelete = (item) => {
-  itemToDelete.value = item
-  showDeleteDialog.value = true
-}
+  itemToDelete.value = item;
+  showDeleteDialog.value = true;
+};
 
 const deleteMessage = computed(() => {
-  if (!itemToDelete.value) return ''
-  const role = itemToDelete.value.admin_role ? 'Администратор' : 'Метролог'
-  return `Вы уверены, что хотите удалить пользователя "${itemToDelete.value.login}" (${itemToDelete.value.surname} ${itemToDelete.value.name}, ${role})?`
-})
+  if (!itemToDelete.value) return '';
+  const role = itemToDelete.value.admin_role ? 'Администратор' : 'Метролог';
+  return `Вы уверены, что хотите удалить пользователя "${itemToDelete.value.login}" (${itemToDelete.value.surname} ${itemToDelete.value.name}, ${role})?`;
+});
 
-const deleteItem = async () => {
-  if (!itemToDelete.value) return
+const deleteItem = async() => {
+  if (!itemToDelete.value) return;
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
   try {
@@ -518,35 +530,35 @@ const deleteItem = async () => {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.detail || 'Ошибка при удалении пользователя')
+      const error = await response.json();
+      throw new Error(error.detail || 'Ошибка при удалении пользователя');
     }
 
     // Обновляем список пользователей
-    await loadUsers()
-    successMessage.value = 'Пользователь успешно удален'
-    showSuccessDialog.value = true
+    await loadUsers();
+    successMessage.value = 'Пользователь успешно удален';
+    showSuccessDialog.value = true;
   } catch (error) {
-    console.error('Error deleting user:', error)
-    errorMessage.value = error.message || 'Ошибка при удалении пользователя'
-    showErrorDialog.value = true
+    // console.error('Error deleting user:', error);
+    errorMessage.value = error.message || 'Ошибка при удалении пользователя';
+    showErrorDialog.value = true;
   } finally {
-    showDeleteDialog.value = false
-    itemToDelete.value = null
+    showDeleteDialog.value = false;
+    itemToDelete.value = null;
   }
-}
+};
 
 // Инициализация при загрузке компонента
 onMounted(() => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
-  loadCurrentUserId()
-  loadUsers()
-})
+  loadCurrentUserId();
+  loadUsers();
+});
 </script>

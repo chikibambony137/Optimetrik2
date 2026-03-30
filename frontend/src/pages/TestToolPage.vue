@@ -164,10 +164,16 @@
           <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #333;">Активен</label>
           <div style="display: flex; gap: 20px;">
             <label style="display: flex; align-items: center; gap: 5px;">
-              <input type="radio" v-model="modalForm.active" :value="true" :disabled="saving"> Да
+              <input type="radio"
+                     v-model="modalForm.active"
+                     :value="true"
+                     :disabled="saving"> Да
             </label>
             <label style="display: flex; align-items: center; gap: 5px;">
-              <input type="radio" v-model="modalForm.active" :value="false" :disabled="saving"> Нет
+              <input type="radio"
+                     v-model="modalForm.active"
+                     :value="false"
+                     :disabled="saving"> Нет
             </label>
           </div>
         </div>
@@ -186,7 +192,7 @@
       v-model:show="showDeleteDialog"
       title="Подтверждение удаления"
       :message="deleteMessage"
-      confirmText="Удалить"
+      confirm-text="Удалить"
       @confirm="deleteItem"
     />
 
@@ -195,7 +201,7 @@
       v-model:show="showErrorDialog"
       title="Ошибка"
       :message="errorMessage"
-      confirmText="Понятно"
+      confirm-text="Понятно"
       @confirm="showErrorDialog = false"
     />
 
@@ -204,181 +210,181 @@
       v-model:show="showSuccessDialog"
       title="Успешно"
       :message="successMessage"
-      confirmText="ОК"
+      confirm-text="ОК"
       @confirm="showSuccessDialog = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '../components/blocks/Dialog.vue'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '../components/blocks/Dialog.vue';
 
-const router = useRouter()
-const API_BASE_URL = 'http://localhost:8000'
+const router = useRouter();
+const API_BASE_URL = 'http://localhost:8000';
 
 // Роль пользователя (получаем из localStorage)
-const userRole = ref('Метролог')
-const loading = ref(false)
-const saving = ref(false)
+const userRole = ref('Метролог');
+const loading = ref(false);
+const saving = ref(false);
 
 // Состояние для поиска и фильтров
-const searchQuery = ref('')
-const showFilters = ref(false)
+const searchQuery = ref('');
+const showFilters = ref(false);
 const filters = ref({
   activeStatus: 'all'
-})
+});
 
 // Диалоги
-const showErrorDialog = ref(false)
-const showSuccessDialog = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+const showErrorDialog = ref(false);
+const showSuccessDialog = ref(false);
+const errorMessage = ref('');
+const successMessage = ref('');
 
 // Данные для таблицы
-const tableData = ref([])
+const tableData = ref([]);
 
 // Загрузка роли пользователя
 const loadUserRole = () => {
   try {
-    const storedUser = localStorage.getItem('user')
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const user = JSON.parse(storedUser)
-      userRole.value = user.admin_role ? 'Администратор' : 'Метролог'
+      const user = JSON.parse(storedUser);
+      userRole.value = user.admin_role ? 'Администратор' : 'Метролог';
     }
-  } catch (error) {
-    console.error('Error loading user role:', error)
+  } catch {
+    // console.error('Error loading user role:', error);
   }
-}
+};
 
 // Загрузка списка тестовых стендов
-const loadTestTools = async () => {
-  const token = localStorage.getItem('access_token')
+const loadTestTools = async() => {
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
     // Всегда загружаем все стенды, фильтрацию делаем на клиенте
     const response = await fetch(`${API_BASE_URL}/test-tools/`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('user')
-        router.push('/login')
-        return
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+        return;
       }
-      throw new Error('Ошибка загрузки тестовых стендов')
+      throw new Error('Ошибка загрузки тестовых стендов');
     }
 
-    const data = await response.json()
-    tableData.value = data
-    console.log('Загружены тестовые стенды:', data)
+    const data = await response.json();
+    tableData.value = data;
+    // console.log('Загружены тестовые стенды:', data);
   } catch (error) {
-    console.error('Error loading test tools:', error)
-    errorMessage.value = error.message || 'Ошибка загрузки тестовых стендов'
-    showErrorDialog.value = true
+    // console.error('Error loading test tools:', error);
+    errorMessage.value = error.message || 'Ошибка загрузки тестовых стендов';
+    showErrorDialog.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Фильтрация данных (на клиенте)
 const filteredData = computed(() => {
   return tableData.value.filter(item => {
     // Поиск по тексту
-    const query = searchQuery.value.toLowerCase()
+    const query = searchQuery.value.toLowerCase();
     const matchesSearch = query === '' || 
-      item.serial_number?.toLowerCase().includes(query)
+      item.serial_number?.toLowerCase().includes(query);
     
     // Фильтр по статусу (на клиенте)
-    let matchesActive = true
+    let matchesActive = true;
     if (filters.value.activeStatus === 'active') {
-      matchesActive = item.active === true
+      matchesActive = item.active === true;
     } else if (filters.value.activeStatus === 'inactive') {
-      matchesActive = item.active === false
+      matchesActive = item.active === false;
     }
     
-    return matchesSearch && matchesActive
-  })
-})
+    return matchesSearch && matchesActive;
+  });
+});
 
 // Применить фильтры
 const applyFilters = () => {
-  showFilters.value = false
+  showFilters.value = false;
   // Не перезагружаем с сервера, просто закрываем панель фильтров
   // Фильтрация уже применится через computed
-}
+};
 
 // Сбросить фильтры
 const resetFilters = () => {
   filters.value = {
     activeStatus: 'all'
-  }
+  };
   // Не перезагружаем с сервера
-}
+};
 
 // Модальное окно
-const showModal = ref(false)
-const modalTitle = ref('Добавить тестовый стенд')
-const editingId = ref(null)
+const showModal = ref(false);
+const modalTitle = ref('Добавить тестовый стенд');
+const editingId = ref(null);
 const modalForm = ref({
   serial_number: '',
   active: true
-})
+});
 
 const openAddModal = () => {
-  if (userRole.value !== 'Администратор') return
-  modalTitle.value = 'Добавить тестовый стенд'
-  editingId.value = null
+  if (userRole.value !== 'Администратор') return;
+  modalTitle.value = 'Добавить тестовый стенд';
+  editingId.value = null;
   modalForm.value = {
     serial_number: '',
     active: true
-  }
-  showModal.value = true
-}
+  };
+  showModal.value = true;
+};
 
 const openEditModal = (item) => {
   if (userRole.value !== 'Администратор') {
-    errorMessage.value = 'У вас нет прав для редактирования'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'У вас нет прав для редактирования';
+    showErrorDialog.value = true;
+    return;
   }
-  modalTitle.value = 'Редактировать тестовый стенд'
-  editingId.value = item.id
+  modalTitle.value = 'Редактировать тестовый стенд';
+  editingId.value = item.id;
   modalForm.value = {
     serial_number: item.serial_number,
     active: item.active
-  }
-  showModal.value = true
-}
+  };
+  showModal.value = true;
+};
 
 const closeModal = () => {
-  showModal.value = false
-}
+  showModal.value = false;
+};
 
-const saveItem = async () => {
+const saveItem = async() => {
   if (!modalForm.value.serial_number) {
-    errorMessage.value = 'Заполните серийный номер'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Заполните серийный номер';
+    showErrorDialog.value = true;
+    return;
   }
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  saving.value = true
+  saving.value = true;
   try {
     if (editingId.value) {
       // Редактирование
@@ -389,14 +395,14 @@ const saveItem = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(modalForm.value)
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Ошибка при обновлении тестового стенда')
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при обновлении тестового стенда');
       }
 
-      successMessage.value = 'Тестовый стенд успешно обновлен'
+      successMessage.value = 'Тестовый стенд успешно обновлен';
     } else {
       // Добавление
       const response = await fetch(`${API_BASE_URL}/test-tools/`, {
@@ -406,41 +412,41 @@ const saveItem = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(modalForm.value)
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Ошибка при создании тестового стенда')
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при создании тестового стенда');
       }
 
-      successMessage.value = 'Тестовый стенд успешно создан'
+      successMessage.value = 'Тестовый стенд успешно создан';
     }
     
     // Обновляем список
-    await loadTestTools()
-    showSuccessDialog.value = true
-    closeModal()
+    await loadTestTools();
+    showSuccessDialog.value = true;
+    closeModal();
   } catch (error) {
-    console.error('Error saving test tool:', error)
-    errorMessage.value = error.message || 'Ошибка при сохранении тестового стенда'
-    showErrorDialog.value = true
+    // console.error('Error saving test tool:', error);
+    errorMessage.value = error.message || 'Ошибка при сохранении тестового стенда';
+    showErrorDialog.value = true;
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
 // Переключение статуса активности
-const toggleActive = async (item) => {
+const toggleActive = async(item) => {
   if (userRole.value !== 'Администратор') {
-    errorMessage.value = 'У вас нет прав для изменения статуса'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'У вас нет прав для изменения статуса';
+    showErrorDialog.value = true;
+    return;
   }
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
   try {
@@ -449,55 +455,55 @@ const toggleActive = async (item) => {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.detail || 'Ошибка при изменении статуса')
+      const error = await response.json();
+      throw new Error(error.detail || 'Ошибка при изменении статуса');
     }
 
-    const updatedItem = await response.json()
+    const updatedItem = await response.json();
     
     // Обновляем элемент в списке
-    const index = tableData.value.findIndex(t => t.id === item.id)
+    const index = tableData.value.findIndex(t => t.id === item.id);
     if (index !== -1) {
-      tableData.value[index] = updatedItem
+      tableData.value[index] = updatedItem;
     }
     
-    successMessage.value = `Статус стенда изменен на ${updatedItem.active ? 'активный' : 'неактивный'}`
-    showSuccessDialog.value = true
+    successMessage.value = `Статус стенда изменен на ${updatedItem.active ? 'активный' : 'неактивный'}`;
+    showSuccessDialog.value = true;
   } catch (error) {
-    console.error('Error toggling test tool:', error)
-    errorMessage.value = error.message || 'Ошибка при изменении статуса'
-    showErrorDialog.value = true
+    // console.error('Error toggling test tool:', error);
+    errorMessage.value = error.message || 'Ошибка при изменении статуса';
+    showErrorDialog.value = true;
   }
-}
+};
 
 // Диалог удаления
-const showDeleteDialog = ref(false)
-const itemToDelete = ref(null)
+const showDeleteDialog = ref(false);
+const itemToDelete = ref(null);
 
 const confirmDelete = (item) => {
   if (userRole.value !== 'Администратор') {
-    errorMessage.value = 'У вас нет прав для удаления'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'У вас нет прав для удаления';
+    showErrorDialog.value = true;
+    return;
   }
-  itemToDelete.value = item
-  showDeleteDialog.value = true
-}
+  itemToDelete.value = item;
+  showDeleteDialog.value = true;
+};
 
 const deleteMessage = computed(() => {
-  return `Вы уверены, что хотите удалить тестовый стенд "${itemToDelete.value?.serial_number || ''}"?`
-})
+  return `Вы уверены, что хотите удалить тестовый стенд "${itemToDelete.value?.serial_number || ''}"?`;
+});
 
-const deleteItem = async () => {
-  if (!itemToDelete.value) return
+const deleteItem = async() => {
+  if (!itemToDelete.value) return;
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
   try {
@@ -506,35 +512,35 @@ const deleteItem = async () => {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.detail || 'Ошибка при удалении тестового стенда')
+      const error = await response.json();
+      throw new Error(error.detail || 'Ошибка при удалении тестового стенда');
     }
 
     // Обновляем список
-    await loadTestTools()
-    successMessage.value = 'Тестовый стенд успешно удален'
-    showSuccessDialog.value = true
+    await loadTestTools();
+    successMessage.value = 'Тестовый стенд успешно удален';
+    showSuccessDialog.value = true;
   } catch (error) {
-    console.error('Error deleting test tool:', error)
-    errorMessage.value = error.message || 'Ошибка при удалении тестового стенда'
-    showErrorDialog.value = true
+    // console.error('Error deleting test tool:', error);
+    errorMessage.value = error.message || 'Ошибка при удалении тестового стенда';
+    showErrorDialog.value = true;
   } finally {
-    showDeleteDialog.value = false
-    itemToDelete.value = null
+    showDeleteDialog.value = false;
+    itemToDelete.value = null;
   }
-}
+};
 
 // Инициализация при загрузке компонента
 onMounted(() => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
-  loadUserRole()
-  loadTestTools()
-})
+  loadUserRole();
+  loadTestTools();
+});
 </script>

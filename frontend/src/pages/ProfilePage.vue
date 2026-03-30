@@ -172,7 +172,7 @@
       v-model:show="showSuccessDialog"
       title="Успешно!"
       :message="successMessage"
-      confirmText="ОК"
+      confirm-text="ОК"
       @confirm="showSuccessDialog = false"
     />
 
@@ -181,20 +181,20 @@
       v-model:show="showErrorDialog"
       title="Ошибка"
       :message="errorMessage"
-      confirmText="Понятно"
+      confirm-text="Понятно"
       @confirm="showErrorDialog = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '../components/blocks/Dialog.vue'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '../components/blocks/Dialog.vue';
 
-const router = useRouter()
-const loading = ref(false)
-const passwordLoading = ref(false)
+const router = useRouter();
+const loading = ref(false);
+const passwordLoading = ref(false);
 
 // Данные пользователя из localStorage
 const userData = ref({
@@ -204,140 +204,140 @@ const userData = ref({
   name: '',
   patronymic: '',
   admin_role: false
-})
+});
 
 // Состояние диалогов
-const showSuccessDialog = ref(false)
-const showErrorDialog = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+const showSuccessDialog = ref(false);
+const showErrorDialog = ref(false);
+const errorMessage = ref('');
+const successMessage = ref('');
 
 // Вычисляемые значения
 const userInitials = computed(() => {
   if (userData.value.surname && userData.value.name) {
-    return (userData.value.surname.charAt(0) + userData.value.name.charAt(0)).toUpperCase()
+    return (userData.value.surname.charAt(0) + userData.value.name.charAt(0)).toUpperCase();
   }
-  return '??'
-})
+  return '??';
+});
 
 const userFullName = computed(() => {
-  const parts = [userData.value.surname, userData.value.name, userData.value.patronymic]
-  return parts.filter(p => p && p.trim()).join(' ').trim() || 'Не указано'
-})
+  const parts = [userData.value.surname, userData.value.name, userData.value.patronymic];
+  return parts.filter(p => p && p.trim()).join(' ').trim() || 'Не указано';
+});
 
-const userRole = computed(() => userData.value.admin_role ? 'Администратор' : 'Метролог')
+const userRole = computed(() => userData.value.admin_role ? 'Администратор' : 'Метролог');
 
 // Форма изменения пароля
 const passwordForm = ref({
   currentPassword: '',
   newPassword: '',
   confirmPassword: ''
-})
+});
 
 // Состояние показа паролей
-const showCurrentPassword = ref(false)
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
+const showCurrentPassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 // Загрузка данных пользователя
 const loadUserData = () => {
   try {
     // Пробуем получить данные из localStorage
-    const storedUser = localStorage.getItem('user')
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      userData.value = JSON.parse(storedUser)
+      userData.value = JSON.parse(storedUser);
     } else {
       // Если данных нет, пробуем получить через токен
-      refreshUserData()
+      refreshUserData();
     }
-  } catch (error) {
-    console.error('Error loading user data:', error)
-    errorMessage.value = 'Ошибка загрузки данных пользователя'
-    showErrorDialog.value = true
+  } catch {
+    // console.error('Error loading user data:', error);
+    errorMessage.value = 'Ошибка загрузки данных пользователя';
+    showErrorDialog.value = true;
   }
-}
+};
 
 // Обновление данных пользователя с сервера
-const refreshUserData = async () => {
-  const token = localStorage.getItem('access_token')
-  alert(token)
+const refreshUserData = async() => {
+  const token = localStorage.getItem('access_token');
+  alert(token);
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
     const response = await fetch('http://localhost:8000/users/me', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
       if (response.status === 401) {
         // Токен невалидный, перенаправляем на login
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('token_type')
-        localStorage.removeItem('user')
-        router.push('/login')
-        return
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token_type');
+        localStorage.removeItem('user');
+        router.push('/login');
+        return;
       }
-      throw new Error('Ошибка получения данных')
+      throw new Error('Ошибка получения данных');
     }
 
-    const data = await response.json()
-    userData.value = data
-    localStorage.setItem('user', JSON.stringify(data))
-    successMessage.value = 'Данные успешно обновлены'
-    showSuccessDialog.value = true
+    const data = await response.json();
+    userData.value = data;
+    localStorage.setItem('user', JSON.stringify(data));
+    successMessage.value = 'Данные успешно обновлены';
+    showSuccessDialog.value = true;
   } catch (error) {
-    console.error('Error refreshing user data:', error)
-    errorMessage.value = error.message || 'Ошибка обновления данных'
-    showErrorDialog.value = true
+    // console.error('Error refreshing user data:', error);
+    errorMessage.value = error.message || 'Ошибка обновления данных';
+    showErrorDialog.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Валидация пароля
 const validatePassword = (password) => {
-  if (password.length < 6) return false
-  if (!/[A-Z]/.test(password)) return false
-  if (!/[0-9]/.test(password)) return false
-  return true
-}
+  if (password.length < 6) return false;
+  if (!/[A-Z]/.test(password)) return false;
+  if (!/[0-9]/.test(password)) return false;
+  return true;
+};
 
 // Смена пароля
-const changePassword = async () => {
+const changePassword = async() => {
   // Проверка заполнения всех полей
   if (!passwordForm.value.currentPassword || !passwordForm.value.newPassword || !passwordForm.value.confirmPassword) {
-    errorMessage.value = 'Заполните все поля'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Заполните все поля';
+    showErrorDialog.value = true;
+    return;
   }
 
   // Проверка совпадения нового пароля и подтверждения
   if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    errorMessage.value = 'Новый пароль и подтверждение не совпадают'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Новый пароль и подтверждение не совпадают';
+    showErrorDialog.value = true;
+    return;
   }
 
   // Проверка сложности пароля
   if (!validatePassword(passwordForm.value.newPassword)) {
-    errorMessage.value = 'Пароль должен содержать минимум 6 символов, хотя бы одну заглавную букву и одну цифру'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Пароль должен содержать минимум 6 символов, хотя бы одну заглавную букву и одну цифру';
+    showErrorDialog.value = true;
+    return;
   }
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  passwordLoading.value = true
+  passwordLoading.value = true;
   try {
     const response = await fetch('http://localhost:8000/users/change-password', {
       method: 'POST',
@@ -349,26 +349,26 @@ const changePassword = async () => {
         current_password: passwordForm.value.currentPassword,
         new_password: passwordForm.value.newPassword
       })
-    })
+    });
 
-    const data = await response.json()
+    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail || 'Ошибка при смене пароля')
+      throw new Error(data.detail || 'Ошибка при смене пароля');
     }
 
     // Успех
-    successMessage.value = 'Пароль успешно изменен'
-    showSuccessDialog.value = true
-    resetPasswordForm()
+    successMessage.value = 'Пароль успешно изменен';
+    showSuccessDialog.value = true;
+    resetPasswordForm();
   } catch (error) {
-    console.error('Password change error:', error)
-    errorMessage.value = error.message || 'Ошибка при смене пароля'
-    showErrorDialog.value = true
+    // console.error('Password change error:', error);
+    errorMessage.value = error.message || 'Ошибка при смене пароля';
+    showErrorDialog.value = true;
   } finally {
-    passwordLoading.value = false
+    passwordLoading.value = false;
   }
-}
+};
 
 // Сброс формы пароля
 const resetPasswordForm = () => {
@@ -376,18 +376,18 @@ const resetPasswordForm = () => {
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
-  }
-}
+  };
+};
 
 // Проверка авторизации при загрузке
 onMounted(() => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
-  loadUserData()
-})
+  loadUserData();
+});
 </script>
 
 <style scoped>

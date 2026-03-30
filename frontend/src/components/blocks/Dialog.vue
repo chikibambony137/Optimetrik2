@@ -1,15 +1,15 @@
 <template>
-  <div v-if="show" class="dialog-overlay" @click.self="closeOnOverlay ? close() : null">
+  <div v-if="props.show" class="dialog-overlay" @click.self="closeOnOverlay ? close() : null">
     <div class="dialog-container">
       <!-- Заголовок -->
       <div class="dialog-header">
-        <h3>{{ title }}</h3>
+        <h3>{{ props.title }}</h3>
         <button v-if="showClose" class="close-btn" @click="close">✕</button>
       </div>
       
       <!-- Описание/контент -->
       <div class="dialog-content">
-        <p>{{ message }}</p>
+        <p>{{ props.message }}</p>
         <!-- Слот для дополнительного контента -->
         <slot></slot>
       </div>
@@ -20,7 +20,7 @@
           class="btn-primary" 
           @click="handleConfirm"
         >
-          {{ confirmText }}
+          {{ props.confirmText }}
         </button>
       </div>
     </div>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits } from 'vue';
 
 // Определяем пропсы
 const props = defineProps({
@@ -56,21 +56,21 @@ const props = defineProps({
     type: Boolean,
     default: true
   }
-})
+});
 
 // Определяем события
-const emit = defineEmits(['update:show', 'confirm'])
+const emit = defineEmits(['update:show', 'confirm']);
 
 // Закрытие диалога
 const close = () => {
-  emit('update:show', false)
-}
+  emit('update:show', false);
+};
 
 // Обработка подтверждения
 const handleConfirm = () => {
-  emit('confirm')
-  close()
-}
+  emit('confirm');
+  close();
+};
 </script>
 
 <style scoped>

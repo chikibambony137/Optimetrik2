@@ -59,7 +59,7 @@
         v-model:show="showSuccessDialog"
         title="Успешный вход"
         message="Вы успешно авторизовались в системе!"
-        confirmText="ОК"
+        confirm-text="ОК"
         @confirm="handleSuccessConfirm"
       />
 
@@ -68,7 +68,7 @@
         v-model:show="showErrorDialog"
         title="Ошибка входа"
         :message="errorMessage"
-        confirmText="Понятно"
+        confirm-text="Понятно"
         @confirm="showErrorDialog = false"
       />
     </div>
@@ -76,92 +76,92 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '../components/blocks/Dialog.vue'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '../components/blocks/Dialog.vue';
 
-const router = useRouter()
+const router = useRouter();
 
-const login = ref('')
-const password = ref('')
-const showPassword = ref(false)
-const showSuccessDialog = ref(false)
-const showErrorDialog = ref(false)
-const errorMessage = ref('')
-const loading = ref(false)
+const login = ref('');
+const password = ref('');
+const showPassword = ref(false);
+const showSuccessDialog = ref(false);
+const showErrorDialog = ref(false);
+const errorMessage = ref('');
+const loading = ref(false);
 
-const handleLogin = async () => {
+const handleLogin = async() => {
   // Валидация
   if (!login.value || !password.value) {
-    errorMessage.value = 'Заполните логин и пароль'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Заполните логин и пароль';
+    showErrorDialog.value = true;
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
 
   try {
     // Отправка запроса на бэкенд
     const response = await fetch('http://localhost:8000/auth/login', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
       body: new URLSearchParams({
         'username': login.value,
         'password': password.value
       })
-    })
+    });
 
-    const data = await response.json()
+    const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail || 'Ошибка авторизации')
+      throw new Error(data.detail || 'Ошибка авторизации');
     }
 
     // Сохраняем токен
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('token_type', data.token_type)
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('token_type', data.token_type);
 
     // Получаем данные пользователя
-    await fetchUserData()
+    await fetchUserData();
 
     // Показываем успешный вход
-    showSuccessDialog.value = true
+    showSuccessDialog.value = true;
 
-  } catch (error) {
-    console.error('Login error:', error)
-    errorMessage.value = error.message || 'Неверный логин или пароль'
-    showErrorDialog.value = true
+  } catch {
+    // console.error('Login error:', error);
+    errorMessage.value = 'Неверный логин или пароль';
+    showErrorDialog.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
-const fetchUserData = async () => {
+const fetchUserData = async() => {
   try {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token');
     const response = await fetch('http://localhost:8000/users/me', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (response.ok) {
-      const userData = await response.json()
+      const userData = await response.json();
       // Сохраняем данные пользователя
-      localStorage.setItem('user', JSON.stringify(userData))
+      localStorage.setItem('user', JSON.stringify(userData));
     }
-  } catch (error) {
-    console.error('Error fetching user data:', error)
+  } catch {
+    // console.error('Error fetching user data:', error);
   }
-}
+};
 
 const handleSuccessConfirm = () => {
-  router.push('/main/journal')
-}
+  router.push('/main/journal');
+};
 
 const goToRegistration = () => {
-  router.push('/registration')
-}
+  router.push('/registration');
+};
 </script>

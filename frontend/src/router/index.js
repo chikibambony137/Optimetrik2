@@ -1,12 +1,12 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import MainPage from '../pages/MainPage.vue' // Импортируем layout с меню
-import JournalPage from '../pages/JournalPage.vue'
-import ReferencePage from '../pages/ReferencePage.vue'
-import TestToolPage from '../pages/TestToolPage.vue'
-import ProfilePage from '../pages/ProfilePage.vue'
-import UsersPage from '../pages/UsersPage.vue'
-import Authorization from '../pages/Authorization.vue'
-import Registration from '../pages/Registration.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import MainPage from '../pages/MainPage.vue'; // Импортируем layout с меню
+import JournalPage from '../pages/JournalPage.vue';
+import ReferencePage from '../pages/ReferencePage.vue';
+import TestToolPage from '../pages/TestToolPage.vue';
+import ProfilePage from '../pages/ProfilePage.vue';
+import UsersPage from '../pages/UsersPage.vue';
+import Authorization from '../pages/Authorization.vue';
+import Registration from '../pages/Registration.vue';
 
 const routes = [
   {
@@ -54,11 +54,11 @@ const routes = [
       }
     ]
   }
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
+});
 
-export default router
+export default router;

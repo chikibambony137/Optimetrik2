@@ -214,7 +214,7 @@
       v-model:show="showDeleteDialog"
       title="Подтверждение удаления"
       :message="deleteMessage"
-      confirmText="Удалить"
+      confirm-text="Удалить"
       @confirm="deleteItem"
     />
 
@@ -223,7 +223,7 @@
       v-model:show="showErrorDialog"
       title="Ошибка"
       :message="errorMessage"
-      confirmText="Понятно"
+      confirm-text="Понятно"
       @confirm="showErrorDialog = false"
     />
 
@@ -232,143 +232,143 @@
       v-model:show="showSuccessDialog"
       title="Успешно"
       :message="successMessage"
-      confirmText="ОК"
+      confirm-text="ОК"
       @confirm="showSuccessDialog = false"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import Dialog from '../components/blocks/Dialog.vue'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import Dialog from '../components/blocks/Dialog.vue';
 
-const router = useRouter()
-const API_BASE_URL = 'http://localhost:8000'
+const router = useRouter();
+const API_BASE_URL = 'http://localhost:8000';
 
 // Роль пользователя
-const userRole = ref('Метролог')
-const loading = ref(false)
-const saving = ref(false)
+const userRole = ref('Метролог');
+const loading = ref(false);
+const saving = ref(false);
 
 // Состояние для поиска и фильтров
-const searchQuery = ref('')
-const showFilters = ref(false)
+const searchQuery = ref('');
+const showFilters = ref(false);
 const filters = ref({
   validityStatus: 'all',
   admissionFrom: '',
   admissionTo: '',
   validFrom: '',
   validTo: ''
-})
+});
 
 // Диалоги
-const showErrorDialog = ref(false)
-const showSuccessDialog = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
+const showErrorDialog = ref(false);
+const showSuccessDialog = ref(false);
+const errorMessage = ref('');
+const successMessage = ref('');
 
 // Данные для таблицы
-const tableData = ref([])
+const tableData = ref([]);
 
 // Загрузка роли пользователя
 const loadUserRole = () => {
   try {
-    const storedUser = localStorage.getItem('user')
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      const user = JSON.parse(storedUser)
-      userRole.value = user.admin_role ? 'Администратор' : 'Метролог'
+      const user = JSON.parse(storedUser);
+      userRole.value = user.admin_role ? 'Администратор' : 'Метролог';
     }
-  } catch (error) {
-    console.error('Error loading user role:', error)
+  } catch {
+    // console.error('Error loading user role:', error);
   }
-}
+};
 
 // Загрузка списка эталонов
-const loadReferenceDevices = async () => {
-  const token = localStorage.getItem('access_token')
+const loadReferenceDevices = async() => {
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  loading.value = true
+  loading.value = true;
   try {
     const url = filters.value.validityStatus === 'valid'
       ? `${API_BASE_URL}/reference-devices/?valid_only=true`
-      : `${API_BASE_URL}/reference-devices/`
+      : `${API_BASE_URL}/reference-devices/`;
     
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('user')
-        router.push('/login')
-        return
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        router.push('/login');
+        return;
       }
-      throw new Error('Ошибка загрузки эталонов')
+      throw new Error('Ошибка загрузки эталонов');
     }
 
-    const data = await response.json()
-    tableData.value = data
-    console.log('Загружены эталоны:', data)
+    const data = await response.json();
+    tableData.value = data;
+    // console.log('Загружены эталоны:', data);
   } catch (error) {
-    console.error('Error loading reference devices:', error)
-    errorMessage.value = error.message || 'Ошибка загрузки эталонов'
-    showErrorDialog.value = true
+    // console.error('Error loading reference devices:', error);
+    errorMessage.value = error.message || 'Ошибка загрузки эталонов';
+    showErrorDialog.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // Фильтрация данных
 const filteredData = computed(() => {
   return tableData.value.filter(item => {
     // Поиск по тексту
-    const query = searchQuery.value.toLowerCase()
+    const query = searchQuery.value.toLowerCase();
     const matchesSearch = query === '' || 
       item.serial_number?.toLowerCase().includes(query) ||
       formatDate(item.date_admission).toLowerCase().includes(query) ||
-      formatDate(item.valid_for).toLowerCase().includes(query)
+      formatDate(item.valid_for).toLowerCase().includes(query);
     
     // Фильтр по статусу валидности (на клиенте)
-    let matchesValidity = true
+    let matchesValidity = true;
     if (filters.value.validityStatus === 'valid') {
-      matchesValidity = !isExpired(item.valid_for)
+      matchesValidity = !isExpired(item.valid_for);
     } else if (filters.value.validityStatus === 'expired') {
-      matchesValidity = isExpired(item.valid_for)
+      matchesValidity = isExpired(item.valid_for);
     }
     
     // Фильтр по дате поступления
     const matchesAdmissionFrom = !filters.value.admissionFrom || 
-      item.date_admission >= filters.value.admissionFrom
+      item.date_admission >= filters.value.admissionFrom;
     const matchesAdmissionTo = !filters.value.admissionTo || 
-      item.date_admission <= filters.value.admissionTo
+      item.date_admission <= filters.value.admissionTo;
     
     // Фильтр по дате валидности
     const matchesValidFrom = !filters.value.validFrom || 
-      item.valid_for >= filters.value.validFrom
+      item.valid_for >= filters.value.validFrom;
     const matchesValidTo = !filters.value.validTo || 
-      item.valid_for <= filters.value.validTo
+      item.valid_for <= filters.value.validTo;
     
     return matchesSearch && matchesValidity && 
            matchesAdmissionFrom && matchesAdmissionTo &&
-           matchesValidFrom && matchesValidTo
-  })
-})
+           matchesValidFrom && matchesValidTo;
+  });
+});
 
 // Применить фильтры
 const applyFilters = () => {
-  showFilters.value = false
+  showFilters.value = false;
   if (filters.value.validityStatus !== 'all') {
-    loadReferenceDevices() // Перезагружаем с сервера с фильтром valid_only
+    loadReferenceDevices(); // Перезагружаем с сервера с фильтром valid_only
   }
-}
+};
 
 // Сбросить фильтры
 const resetFilters = () => {
@@ -378,90 +378,90 @@ const resetFilters = () => {
     admissionTo: '',
     validFrom: '',
     validTo: ''
-  }
-  loadReferenceDevices() // Перезагружаем все
-}
+  };
+  loadReferenceDevices(); // Перезагружаем все
+};
 
 // Проверка на просроченность
 const isExpired = (dateStr) => {
-  if (!dateStr) return false
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const validDate = new Date(dateStr)
-  validDate.setHours(0, 0, 0, 0)
-  return validDate < today
-}
+  if (!dateStr) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const validDate = new Date(dateStr);
+  validDate.setHours(0, 0, 0, 0);
+  return validDate < today;
+};
 
 // Форматирование даты
 const formatDate = (dateStr) => {
-  if (!dateStr) return '—'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('ru-RU')
-}
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ru-RU');
+};
 
 // Модальное окно
-const showModal = ref(false)
-const modalTitle = ref('Добавить эталонное средство')
-const editingId = ref(null)
+const showModal = ref(false);
+const modalTitle = ref('Добавить эталонное средство');
+const editingId = ref(null);
 const modalForm = ref({
   serial_number: '',
   date_admission: '',
   valid_for: ''
-})
+});
 
 const openAddModal = () => {
-  if (userRole.value !== 'Администратор') return
-  modalTitle.value = 'Добавить эталонное средство'
-  editingId.value = null
+  if (userRole.value !== 'Администратор') return;
+  modalTitle.value = 'Добавить эталонное средство';
+  editingId.value = null;
   modalForm.value = {
     serial_number: '',
     date_admission: '',
     valid_for: ''
-  }
-  showModal.value = true
-}
+  };
+  showModal.value = true;
+};
 
 const openEditModal = (item) => {
   if (userRole.value !== 'Администратор') {
-    errorMessage.value = 'У вас нет прав для редактирования'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'У вас нет прав для редактирования';
+    showErrorDialog.value = true;
+    return;
   }
-  modalTitle.value = 'Редактировать эталонное средство'
-  editingId.value = item.id
+  modalTitle.value = 'Редактировать эталонное средство';
+  editingId.value = item.id;
   modalForm.value = {
     serial_number: item.serial_number,
     date_admission: item.date_admission,
     valid_for: item.valid_for
-  }
-  showModal.value = true
-}
+  };
+  showModal.value = true;
+};
 
 const closeModal = () => {
-  showModal.value = false
-}
+  showModal.value = false;
+};
 
-const saveItem = async () => {
+const saveItem = async() => {
   if (!modalForm.value.serial_number || !modalForm.value.date_admission || !modalForm.value.valid_for) {
-    errorMessage.value = 'Заполните все поля'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Заполните все поля';
+    showErrorDialog.value = true;
+    return;
   }
 
   // Проверка дат
   if (new Date(modalForm.value.valid_for) <= new Date(modalForm.value.date_admission)) {
-    errorMessage.value = 'Дата окончания срока должна быть позже даты поступления'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'Дата окончания срока должна быть позже даты поступления';
+    showErrorDialog.value = true;
+    return;
   }
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
-  saving.value = true
+  saving.value = true;
   try {
     if (editingId.value) {
       // Редактирование
@@ -472,14 +472,14 @@ const saveItem = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(modalForm.value)
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Ошибка при обновлении эталона')
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при обновлении эталона');
       }
 
-      successMessage.value = 'Эталон успешно обновлен'
+      successMessage.value = 'Эталон успешно обновлен';
     } else {
       // Добавление
       const response = await fetch(`${API_BASE_URL}/reference-devices/`, {
@@ -489,54 +489,54 @@ const saveItem = async () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(modalForm.value)
-      })
+      });
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.detail || 'Ошибка при создании эталона')
+        const error = await response.json();
+        throw new Error(error.detail || 'Ошибка при создании эталона');
       }
 
-      successMessage.value = 'Эталон успешно создан'
+      successMessage.value = 'Эталон успешно создан';
     }
     
     // Обновляем список
-    await loadReferenceDevices()
-    showSuccessDialog.value = true
-    closeModal()
+    await loadReferenceDevices();
+    showSuccessDialog.value = true;
+    closeModal();
   } catch (error) {
-    console.error('Error saving reference device:', error)
-    errorMessage.value = error.message || 'Ошибка при сохранении эталона'
-    showErrorDialog.value = true
+    // console.error('Error saving reference device:', error);
+    errorMessage.value = error.message || 'Ошибка при сохранении эталона';
+    showErrorDialog.value = true;
   } finally {
-    saving.value = false
+    saving.value = false;
   }
-}
+};
 
 // Диалог удаления
-const showDeleteDialog = ref(false)
-const itemToDelete = ref(null)
+const showDeleteDialog = ref(false);
+const itemToDelete = ref(null);
 
 const confirmDelete = (item) => {
   if (userRole.value !== 'Администратор') {
-    errorMessage.value = 'У вас нет прав для удаления'
-    showErrorDialog.value = true
-    return
+    errorMessage.value = 'У вас нет прав для удаления';
+    showErrorDialog.value = true;
+    return;
   }
-  itemToDelete.value = item
-  showDeleteDialog.value = true
-}
+  itemToDelete.value = item;
+  showDeleteDialog.value = true;
+};
 
 const deleteMessage = computed(() => {
-  return `Вы уверены, что хотите удалить эталон "${itemToDelete.value?.serial_number || ''}"?`
-})
+  return `Вы уверены, что хотите удалить эталон "${itemToDelete.value?.serial_number || ''}"?`;
+});
 
-const deleteItem = async () => {
-  if (!itemToDelete.value) return
+const deleteItem = async() => {
+  if (!itemToDelete.value) return;
 
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
 
   try {
@@ -545,35 +545,35 @@ const deleteItem = async () => {
       headers: {
         'Authorization': `Bearer ${token}`
       }
-    })
+    });
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.detail || 'Ошибка при удалении эталона')
+      const error = await response.json();
+      throw new Error(error.detail || 'Ошибка при удалении эталона');
     }
 
     // Обновляем список
-    await loadReferenceDevices()
-    successMessage.value = 'Эталон успешно удален'
-    showSuccessDialog.value = true
+    await loadReferenceDevices();
+    successMessage.value = 'Эталон успешно удален';
+    showSuccessDialog.value = true;
   } catch (error) {
-    console.error('Error deleting reference device:', error)
-    errorMessage.value = error.message || 'Ошибка при удалении эталона'
-    showErrorDialog.value = true
+    // console.error('Error deleting reference device:', error);
+    errorMessage.value = error.message || 'Ошибка при удалении эталона';
+    showErrorDialog.value = true;
   } finally {
-    showDeleteDialog.value = false
-    itemToDelete.value = null
+    showDeleteDialog.value = false;
+    itemToDelete.value = null;
   }
-}
+};
 
 // Инициализация при загрузке компонента
 onMounted(() => {
-  const token = localStorage.getItem('access_token')
+  const token = localStorage.getItem('access_token');
   if (!token) {
-    router.push('/login')
-    return
+    router.push('/login');
+    return;
   }
-  loadUserRole()
-  loadReferenceDevices()
-})
+  loadUserRole();
+  loadReferenceDevices();
+});
 </script>
