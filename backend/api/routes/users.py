@@ -10,6 +10,7 @@ from schemas.user import (
     UserUpdate
 )
 from core.security import get_password_hash, verify_password
+from core import redis_client
 
 router = APIRouter(prefix="/users", tags=["Пользователи"])
 
@@ -41,8 +42,20 @@ async def get_users(
     """
     Получить список всех пользователей (только для администраторов)
     """
-    users = db.query(User).offset(skip).limit(limit).all()
-    return users
+    key = f"users:list:{skip}:{limit}"
+
+    def fetch_from_db():
+        print("DATA FROM DB")
+        users = db.query(User).offset(skip).limit(limit).all()
+        return [{
+            "id": u.id,
+            "login": u.login,
+            "surname": u.surname,
+            "name": u.name,
+            "admin_role": u.admin_role
+        } for u in users]
+
+    return redis_client.get_or_set(key, 60, fetch_from_db)
 
 
 @router.get("/{user_id}", response_model=UserRead)

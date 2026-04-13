@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     #     return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:0053@localhost:5432/Optimetrik")
 
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
     # JWT
     SECRET_KEY: str = os.getenv("SECRET_KEY", "default-secret-key")
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"

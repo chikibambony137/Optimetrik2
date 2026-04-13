@@ -37,6 +37,7 @@ services:
     container_name: project_backend
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:
@@ -57,6 +58,14 @@ services:
       - backend
     volumes:
       - ./frontend/dist:/usr/share/nginx/html  # только для разработки (hot reload)
+
+  # Redis (кэширование)
+  redis:
+    image: redis:alpine
+    container_name: project_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
 
 volumes:
   postgres_data:
